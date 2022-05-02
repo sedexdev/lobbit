@@ -19,9 +19,14 @@ class LobbitClient:
     def __init__(self, ip: str, port: int, files: List) -> None:
         """
         Constructor for the LobbitClient class
+
+        Args:
+            ip (str)     : remote IPv4 address
+            port (int)   : remote port to connect to
+            files (List) : list of files to upload to the server
         """
         self.ip = ip
-        self.port = port
+        self.port = int(port)
         self.files = files
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.buffer_size = 4096
