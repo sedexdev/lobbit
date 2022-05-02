@@ -3,8 +3,66 @@
 import argparse
 import ipaddress
 import os
-import socket   
-from typing import Union
+import socket
+import sys
+
+from typing import Dict, List, Union
+
+
+class LobbitClient:
+    """
+    Initialises a socket connection to the address and port
+    passed in by the user and provides functions for checking
+    and uploading files
+    """
+
+    def __init__(self, ip: str, port: int, files: List) -> None:
+        """
+        Constructor for the LobbitClient class
+        """
+        self.ip = ip
+        self.port = port
+        self.files = files
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.buffer_size = 4096
+        self.delimiter = ":"
+
+    def lobbit_connect(self) -> None:
+        """
+        Create the connection to the remote location
+        """
+        try:
+            print(f"\n\n[+] Connecting to {self.ip}:{self.port}...")
+            self.sock.connect((self.ip, self.port))
+            print("[+] Connected successfully")
+        except TimeoutError:
+            print(f"[-] Failed to connect to {self.ip} on port {self.port}. Check IP values and network settings")
+            sys.exit(2)
+
+    def lobbit_send(self) -> None:
+        """
+        Sends the file supplied by the user to the remote
+        location using the socket instance
+        """
+        for file in self.files:
+            self.sock.send(f"{file}{self.delimiter}{self.get_file_sizes()[file]}".encode())
+            with open(file, "rb") as data:
+                while True:
+                    bytes_read = data.read(self.buffer_size)
+                    if not bytes_read:
+                        break
+                    self.sock.sendall(bytes_read)
+        self.sock.close()
+
+    def get_file_sizes(self) -> Dict:
+        """
+        Gets the file size for each file in the list <self.files>
+        and returns a dictionary of each file with its size
+        """
+        file_sizes_dict = dict()
+        for file in self.files:
+            file_sizes_dict[file] = os.path.getsize(file)
+        return file_sizes_dict
 
 
 def valid_ip(ip: str) -> Union[str, bool]:
@@ -47,7 +105,7 @@ def valid_path(file_path: str) -> bool:
     Args:
         file_path (str) : system path to check
     Returns:
-        bool : True is path exists, False if not
+        bool : True is path is a file, False if not
     """
     try:
         return os.path.isfile(file_path)
@@ -65,7 +123,13 @@ def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--ip", dest="ip", help="The IP of the remote host")
     parser.add_argument("-p", "--port", dest="port", help="The network port on the remote host")
-    parser.add_argument("-f", "--file", dest="file", help="The file to be uploaded to the remote host")
+    parser.add_argument(
+        "-f",
+        "--files",
+        dest="files",
+        nargs="+",
+        default=[],
+        help="The file to be uploaded to the remote host")
     return parser
 
 
@@ -82,8 +146,11 @@ def check_parse_errors(parser: argparse.ArgumentParser, args: argparse.Namespace
         parser.error(f"\n\n[-] '{args.ip}' is an invalid IPv4 address\n")
     if not valid_port(args.port):
         parser.error(f"\n\n[-] '{args.port}' is an invalid port number\n")
-    if not valid_path(args.file):
-        parser.error(f"\n\n[-] '{args.file}' is not a valid file path\n")
+    if not args.files:
+        parser.error(f"\n\n[-] Provide a file or files to send\n")
+    for file in args.files:
+        if not valid_path(file):
+            parser.error(f"\n\n[-] '{file}' is not a valid file path\n")
 
 
 def get_args() -> argparse.Namespace:
@@ -106,7 +173,9 @@ def main() -> None:
     Main function for the lobbit client
     """
     args = get_args()
-    print(args)
+    client = LobbitClient(args.ip, args.port, args.files)
+    client.lobbit_connect()
+    client.lobbit_send()
 
 
 if __name__ == "__main__":
