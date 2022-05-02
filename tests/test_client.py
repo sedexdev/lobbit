@@ -23,8 +23,8 @@ class TestClient(unittest.TestCase):
         Initialises test case variables
         """
         self.parser = get_parser()
-        self.good_path = f"{os.path.abspath(os.path.dirname(__file__))}/blank"
-        self.bad_path = f"{os.path.abspath(os.path.dirname(__file__))}/tank"
+        self.good_path = f"{os.path.abspath(os.path.dirname(__file__))}/test_data/blank"
+        self.bad_path = f"{os.path.abspath(os.path.dirname(__file__))}/test_data/tank"
         self.lc = LobbitClient("172.16.0.10", 1234, [self.good_path])
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -148,5 +148,7 @@ class TestClient(unittest.TestCase):
         Tests that filenames and sizes are sent back in the correct format
         """
         file_sizes = self.lc.get_file_sizes()
-        expected = {"/storage/data/My_Work/Programming/Python/Python Projects/cmd_tools/lobbit/tests/blank": 0}
+        expected = {
+            "/storage/data/My_Work/Programming/Python/Python Projects/cmd_tools/lobbit/tests/test_data/blank": 0
+        }
         self.assertEqual(file_sizes, expected)
