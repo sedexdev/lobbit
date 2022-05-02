@@ -149,6 +149,6 @@ class TestClient(unittest.TestCase):
         """
         file_sizes = self.lc.get_file_sizes()
         expected = {
-            "/storage/data/My_Work/Programming/Python/Python Projects/cmd_tools/lobbit/tests/test_data/blank": 0
+            f"{os.path.abspath(os.path.dirname(__file__))}/test_data/blank": 0
         }
         self.assertEqual(file_sizes, expected)
