@@ -5,6 +5,8 @@ __pycache__/
 
 # Misc files
 notes
+config.json
+tests/test_data
 
 # Pycharm
 .idea/
