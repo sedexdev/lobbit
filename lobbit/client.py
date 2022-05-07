@@ -30,18 +30,21 @@ class LobbitClient:
         self.files = files
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.buffer_size = 4096
-        self.delimiter = ":"
+        self.delimiter = "<DELIMITER>"
 
     def lobbit_connect(self) -> None:
         """
         Create the connection to the remote location
         """
         try:
-            print(f"\n\n[+] Connecting to {self.ip}:{self.port}...")
+            print(f"\n[+] Connecting to {self.ip}:{self.port}...")
             self.sock.connect((self.ip, self.port))
-            print("[+] Connected successfully")
+            print("[+] Connected successfully\n")
+        except ConnectionRefusedError:
+            print(f"\n[-] Failed to connect to {self.ip}:{self.port}. Check that the server application is running\n")
+            sys.exit(2)
         except TimeoutError:
-            print(f"[-] Failed to connect to {self.ip} on port {self.port}. Check IP values and network settings")
+            print(f"\n[-] Failed to connect to {self.ip}:{self.port}. Check IP values and network settings\n")
             sys.exit(2)
 
     def lobbit_send(self) -> None:
@@ -113,7 +116,9 @@ def valid_path(file_path: str) -> bool:
         bool : True is path is a file, False if not
     """
     try:
-        return os.path.isfile(file_path)
+        if os.path.isabs(file_path):
+            return os.path.isfile(file_path)
+        return os.path.isfile(f"{os.getcwd()}/{file_path}")
     except TypeError:
         return False
 

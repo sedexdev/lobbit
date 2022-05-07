@@ -140,7 +140,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(self.lc.port, 1234)
         self.assertEqual(self.lc.files, [self.good_path])
         self.assertEqual(type(self.lc.sock), type(self.sock))
-        self.assertEqual(self.lc.delimiter, ":")
+        self.assertEqual(self.lc.delimiter, "<DELIMITER>")
         self.assertEqual(self.lc.buffer_size, 4096)
 
     def test_get_file_sizes_returns_dictionary_with_correct_sizes(self) -> None:

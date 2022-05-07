@@ -25,7 +25,7 @@ class LobbitServer:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_sock = None
         self.buffer_size = 4096
-        self.delimiter = ":"
+        self.delimiter = "<DELIMITER>"
 
     def lobbit_listen(self) -> None:
         """
@@ -42,7 +42,7 @@ class LobbitServer:
         Accepts incoming connections from the client
         """
         self.client_sock, address = self.sock.accept()
-        print(f"[+] Client {address} accepted")
+        print(f"[+] Client {address} accepted\n")
 
     def lobbit_receive(self) -> None:
         """
@@ -62,6 +62,7 @@ class LobbitServer:
             self.client_sock.close()
             self.sock.close()
         else:
+            print("\n[-] Socket not configured to accept connections, exiting")
             sys.exit(2)
 
 

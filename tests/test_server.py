@@ -35,7 +35,7 @@ class TestServer(unittest.TestCase):
         self.assertEqual(type(self.ls.sock), type(self.sock))
         self.assertEqual(self.ls.client_sock, None)
         self.assertEqual(self.ls.buffer_size, 4096)
-        self.assertEqual(self.ls.delimiter, ":")
+        self.assertEqual(self.ls.delimiter, "<DELIMITER>")
 
     def test_lobbit_receive_exits_when_client_sock_is_not_initialised(self) -> None:
         """
