@@ -5,6 +5,7 @@ import ipaddress
 import os
 import socket
 import sys
+import time
 
 from typing import Dict, List, Union
 
@@ -53,7 +54,9 @@ class LobbitClient:
         location using the socket instance
         """
         for file in self.files:
-            self.sock.send(f"{file}{self.delimiter}{self.get_file_sizes()[file]}".encode())
+            file_info = f"{file}{self.delimiter}{self.get_file_sizes()[file]}".encode()
+            self.sock.send(file_info)
+            time.sleep(1)
             with open(file, "rb") as data:
                 while True:
                     bytes_read = data.read(self.buffer_size)

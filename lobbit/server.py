@@ -54,11 +54,13 @@ class LobbitServer:
             file_name = os.path.basename(file_name)
             file_size = int(file_size)
             with open(file_name, "wb") as data:
+                print(f"[+] Writing {int(file_size)} bytes of data to '{file_name}'...")
                 while True:
                     bytes_read = self.client_sock.recv(self.buffer_size)
                     if not bytes_read:
                         break
                     data.write(bytes_read)
+                print(f"[+] '{file_name}' written successfully\n")
             self.client_sock.close()
             self.sock.close()
         else:
