@@ -16,25 +16,21 @@ class TestLobbitREPL(unittest.TestCase):
         """
         self.repl = LobbitREPL()
 
-    # def tearDown(self) -> None:
-    #     """
-    #     Cleans up after all tests have run
-    #     """
-    #     pass
-
     def test_LobbitREPL_class_initialises_correctly(self) -> None:
         """
         Tests that the correct attributes are assigned when
         a new instance of LobbitREPL is created
         """
         self.assertEqual(self.repl.prompt, "lobbit> ")
-        self.assertEqual(self.repl.context, "base")
-        self.assertEqual(self.repl.help, "help")
-        self.assertEqual(self.repl.quit, "quit")
-        self.assertEqual(self.repl.base_commands, ["set", "file", "user"])
         self.assertEqual(self.repl.set_subcmds, ["ip", "port"])
         self.assertEqual(self.repl.file_subcmds, ["add", "get", "remove", "move", "list", "upload"])
         self.assertEqual(self.repl.user_subcmds, ["create", "update", "delete"])
+        self.cmd_map = {
+            "reset": [],
+            "set": self.repl.set_subcmds,
+            "file": self.repl.file_subcmds,
+            "user": self.repl.user_subcmds
+        }
         self.assertEqual(self.repl.cmd, None)
 
     def test_quit_command_exits_repl(self) -> None:
@@ -47,48 +43,43 @@ class TestLobbitREPL(unittest.TestCase):
             self.repl.run()
             self.assertEqual(se.exception.code, 1)
 
-    def test_entering_only_help_command_displays_correct_help(self) -> None:
+    def test_is_base_cmd_returns_value(self) -> None:
         """
-        Tests that the help menu is displayed to the user in the
-        'base' context if only the help command is entered
+        Tests that the is_base_cmd method returns its value parameter if
+        a valid base command is passed in
         """
-        with patch('sys.stdout', new=StringIO()) as stdout:
-            self.repl.cmd = "help"
-            self.assertIn("set", stdout.getvalue())
-            self.assertIn("file", stdout.getvalue())
-            self.assertIn("user", stdout.getvalue())
+        cmd = self.repl.is_base_cmd("set")
+        self.assertEqual(cmd, "set")
 
-    def test_entering_only_set_command_displays_correct_help(self) -> None:
+    def test_is_base_cmd_prints_alert(self) -> None:
         """
-        Tests that the help menu is displayed to the user in the
-        'set' context if only the set command is entered
+        Tests that the is_base_cmd method prints an alert if an invalid
+        base command is passed in
         """
+        self.repl.is_base_cmd("test")
         with patch('sys.stdout', new=StringIO()) as stdout:
-            self.repl.cmd = "set"
-            self.assertIn("ip", stdout.getvalue())
-            self.assertIn("port", stdout.getvalue())
+            self.assertIn(stdout.getvalue(), "unknown command")
 
-    def test_entering_only_file_command_displays_correct_help(self) -> None:
+    def test_is_sub_cmd_returns_tuple(self) -> None:
         """
-        Tests that the help menu is displayed to the user in the
-        'file' context if only the file command is entered
+        Tests that the is_sub_cmd method returns a tuple if a valid
+        sub command is passed in
         """
-        with patch('sys.stdout', new=StringIO()) as stdout:
-            self.repl.cmd = "file"
-            self.assertIn("add", stdout.getvalue())
-            self.assertIn("get", stdout.getvalue())
-            self.assertIn("remove", stdout.getvalue())
-            self.assertIn("move", stdout.getvalue())
-            self.assertIn("list", stdout.getvalue())
-            self.assertIn("upload", stdout.getvalue())
+        cmd = self.repl.is_sub_cmd("ip")
+        self.assertEqual(cmd, ("set", "ip"))
 
-    def test_entering_only_user_command_displays_correct_help(self) -> None:
+    def test_is_sub_cmd_prints_alert(self) -> None:
         """
-        Tests that the help menu is displayed to the user in the
-        'user' context if only the user command is entered
+        Tests that the is_sub_cmd method prints an alert if an invalid
+        sub command is passed in
         """
+        self.repl.is_sub_cmd("test")
         with patch('sys.stdout', new=StringIO()) as stdout:
-            self.repl.cmd = "user"
-            self.assertIn("create", stdout.getvalue())
-            self.assertIn("update", stdout.getvalue())
-            self.assertIn("delete", stdout.getvalue())
+            self.assertIn(stdout.getvalue(), "unknown command")
+
+    def test_set_value_assigns_attribute_values_correctly(self) -> None:
+        """
+        Tests that the set_value method correctly assigns IPv4 addresses
+        and port numbers
+        """
+        self.repl.set_value("127.0.0.1", "ip")
