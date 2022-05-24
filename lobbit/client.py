@@ -1,6 +1,5 @@
 #!/bin/bash python
 
-import argparse
 import ipaddress
 import os
 import socket
