@@ -26,7 +26,7 @@ class LobbitClient:
             files (List) : list of files to upload to the server
         """
         self.ip = ip
-        self.port = int(port)
+        self.port = port
         self.files = files
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.buffer_size = 4096

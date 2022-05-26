@@ -2,7 +2,7 @@
 
 import sys
 
-# from lobbit.client import LobbitClient
+from lobbit.client import LobbitClient
 
 
 class LobbitREPL:
@@ -22,25 +22,26 @@ class LobbitREPL:
         self.file_subcmds = ["add", "get", "remove", "move", "list", "upload"]
         self.user_subcmds = ["create", "update", "delete"]
         self.cmd_map = {
-            "reset": [],
             "set": self.set_subcmds,
             "file": self.file_subcmds,
             "user": self.user_subcmds
         }
         self.cmd = None
+        self.client = LobbitClient("", 0, [])
 
     @staticmethod
     def display_help() -> None:
         """
         Shows the help menu
         """
-        print("\nBase commands:\n"
+        print("\n==== LOBBIT HELP MENU ====\n"
+              "\nBase commands:\n"
               "set - Set the value of a required input\n"
-              "file - perform an action on a file\n"
+              "file - perform an action on a file or list of files\n"
               "user - perform an action on a user object\n"
               "\nSet commands:\n"
-              "ip - set the IPv4 address of the remote server\n"
-              "port - set the port of the remote server\n"
+              "ip - set the IPv4 address of the remote server (REQUIRED)\n"
+              "port - set the port of the remote server (REQUIRED)\n"
               "\nFile commands:\n"
               "add - add a file to the list of files to be uploaded\n"
               "get - get a single file from the remote server\n"
@@ -50,8 +51,12 @@ class LobbitREPL:
               "upload - upload the files you have added\n"
               "\nUser commands:\n"
               "create - create a new user\n"
-              "update - update a username or password for an existing user\n"
-              "delete - delete an existing user\n")
+              "update - update a password for an existing user\n"
+              "delete - delete an existing user\n"
+              "\nExamples:\n\n"
+              "Set IPv4 address       : set ip 100.200.0.1\n"
+              "Add 2 files for upload : file add /path/to/file1 /another/path/to/file2\n"
+              "Change user password   : user update <username> <password>\n")
 
     @staticmethod
     def exit(interrupt=False) -> None:
@@ -108,16 +113,39 @@ class LobbitREPL:
         cmds = self.cmd.split(" ")
         len_cmds = len(cmds)
         if len_cmds == 1:
-            self.cmd = cmds[0]
+            self.handle_single_cmd()
             return
         i = 0
         while i < len_cmds:
             if i == 0:
-                if not cmds[i] == self.is_base_cmd(cmds[i]):
-                    self.alert(f"unknown command '{cmds[i]}'", 3)
-            i += 1
+                if not self.is_base_cmd(cmds[i]):
+                    self.alert(f"unknown command '{self.cmd}'", 3)
+                    i += 1
+                    continue
+                i += 1
+            elif i == 1:
+                if not self.is_sub_cmd(cmds[i]):
+                    self.alert(f"unknown command '{self.cmd}'", 3)
+                    i += 1
+                    continue
+                i += 1
+            else:
+                i += 1
+                continue
 
-    def is_base_cmd(self, value: str) -> str:
+    def handle_single_cmd(self) -> None:
+        """
+        Process a single command and display the appropriate
+        output to the user
+        """
+        if self.cmd == "help":
+            self.display_help()
+        elif self.is_base_cmd(self.cmd):
+            self.alert(f"incomplete command '{self.cmd}'", 3)
+        else:
+            self.alert(f"unknown command '{self.cmd}'", 3)
+
+    def is_base_cmd(self, value: str) -> bool:
         """
         Checks to see if the value passed in is a base command and
         returns the command if it is, otherwise a bad input warning
@@ -126,11 +154,9 @@ class LobbitREPL:
         Args:
             value (str) : the value to check
         """
-        if value in self.cmd_map.keys() or value == "":
-            return value
-        self.alert(f"unknown command '{value}'", 3)
+        return value in self.cmd_map.keys() or (value == "" or value == "help")
 
-    def is_sub_cmd(self, value: str) -> tuple:
+    def is_sub_cmd(self, value: str) -> bool:
         """
         Checks to see if the value passed in is a sub command and
         returns the sub command if it is, along with its parent command.
@@ -143,8 +169,8 @@ class LobbitREPL:
         """
         for key in self.cmd_map:
             if value in self.cmd_map[key]:
-                return key, value
-        self.alert(f"unknown command '{value}'", 3)
+                return True
+        return False
 
     def set_value(self, value: str, sub_cmd: str) -> None:
         """

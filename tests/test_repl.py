@@ -25,12 +25,11 @@ class TestLobbitREPL(unittest.TestCase):
         self.assertEqual(self.repl.set_subcmds, ["ip", "port"])
         self.assertEqual(self.repl.file_subcmds, ["add", "get", "remove", "move", "list", "upload"])
         self.assertEqual(self.repl.user_subcmds, ["create", "update", "delete"])
-        self.cmd_map = {
-            "reset": [],
+        self.assertEqual(self.repl.cmd_map, {
             "set": self.repl.set_subcmds,
             "file": self.repl.file_subcmds,
             "user": self.repl.user_subcmds
-        }
+        })
         self.assertEqual(self.repl.cmd, None)
 
     def test_quit_command_exits_repl(self) -> None:
@@ -43,39 +42,33 @@ class TestLobbitREPL(unittest.TestCase):
             self.repl.run()
             self.assertEqual(se.exception.code, 1)
 
-    def test_is_base_cmd_returns_value(self) -> None:
+    def test_is_base_cmd_returns_true(self) -> None:
         """
-        Tests that the is_base_cmd method returns its value parameter if
+        Tests that the is_base_cmd method returns True if
         a valid base command is passed in
         """
-        cmd = self.repl.is_base_cmd("set")
-        self.assertEqual(cmd, "set")
+        self.assertTrue(self.repl.is_base_cmd("set"))
 
-    def test_is_base_cmd_prints_alert(self) -> None:
+    def test_is_base_cmd_returns_false(self) -> None:
         """
-        Tests that the is_base_cmd method prints an alert if an invalid
-        base command is passed in
+        Tests that the is_base_cmd method returns False if
+        an invalid base command is passed in
         """
-        self.repl.is_base_cmd("test")
-        with patch('sys.stdout', new=StringIO()) as stdout:
-            self.assertIn(stdout.getvalue(), "unknown command")
+        self.assertFalse(self.repl.is_base_cmd("test"))
 
-    def test_is_sub_cmd_returns_tuple(self) -> None:
+    def test_is_sub_cmd_returns_true(self) -> None:
         """
-        Tests that the is_sub_cmd method returns a tuple if a valid
+        Tests that the is_sub_cmd method returns True if a valid
         sub command is passed in
         """
-        cmd = self.repl.is_sub_cmd("ip")
-        self.assertEqual(cmd, ("set", "ip"))
+        self.assertTrue(self.repl.is_sub_cmd("ip"))
 
-    def test_is_sub_cmd_prints_alert(self) -> None:
+    def test_is_sub_cmd_returns_false(self) -> None:
         """
-        Tests that the is_sub_cmd method prints an alert if an invalid
-        sub command is passed in
+        Tests that the is_sub_cmd method returns False if
+        an invalid sub command is passed in
         """
-        self.repl.is_sub_cmd("test")
-        with patch('sys.stdout', new=StringIO()) as stdout:
-            self.assertIn(stdout.getvalue(), "unknown command")
+        self.assertFalse(self.repl.is_sub_cmd("test"))
 
     def test_set_value_assigns_attribute_values_correctly(self) -> None:
         """
@@ -83,3 +76,33 @@ class TestLobbitREPL(unittest.TestCase):
         and port numbers
         """
         self.repl.set_value("127.0.0.1", "ip")
+
+    def test_handle_single_cmd_method_displays_help(self) -> None:
+        """
+        Tests that the handle_single_cmd method displays the help
+        text when the command 'help' is types
+        """
+        self.repl.cmd = "help"
+        with patch("sys.stdout", new=StringIO()) as stdout:
+            self.repl.handle_single_cmd()
+            self.assertIn("\n==== LOBBIT HELP MENU ====\n", stdout.getvalue())
+
+    def test_handle_single_cmd_method_displays_incomplete_command(self) -> None:
+        """
+        Tests that the handle_single_cmd method displays an error
+        message when a single command is entered
+        """
+        self.repl.cmd = "set"
+        with patch("sys.stdout", new=StringIO()) as stdout:
+            self.repl.handle_single_cmd()
+            self.assertIn("incomplete command", stdout.getvalue())
+
+    def test_handle_single_cmd_method_displays_unknown_command(self) -> None:
+        """
+        Tests that the handle_single_cmd method displays an error
+        message when a single unknown command is entered
+        """
+        self.repl.cmd = "test"
+        with patch("sys.stdout", new=StringIO()) as stdout:
+            self.repl.handle_single_cmd()
+            self.assertIn("unknown command", stdout.getvalue())
