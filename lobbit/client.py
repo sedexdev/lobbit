@@ -1,5 +1,3 @@
-#!/bin/bash python
-
 import ipaddress
 import os
 import socket
