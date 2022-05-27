@@ -28,7 +28,7 @@ class LobbitClient:
         self.ip = ip
         self.port = port
         self.files = files
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock = None
         self.buffer_size = 4096
         self.delimiter = "<DELIMITER>"
 
@@ -36,6 +36,7 @@ class LobbitClient:
         """
         Create the connection to the remote location
         """
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             print(f"\n[+] Connecting to {self.ip}:{self.port}...")
             self.sock.connect((self.ip, self.port))

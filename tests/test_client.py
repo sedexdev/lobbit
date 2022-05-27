@@ -24,7 +24,8 @@ class TestClient(unittest.TestCase):
         """
         Cleans up after testing
         """
-        self.lc.sock.close()
+        if self.lc.sock:
+            self.lc.sock.close()
         self.sock.close()
 
     def test_valid_ip_returns_ip(self) -> None:
@@ -81,7 +82,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(self.lc.ip, "172.16.0.10")
         self.assertEqual(self.lc.port, 1234)
         self.assertEqual(self.lc.files, [self.good_path])
-        self.assertEqual(type(self.lc.sock), type(self.sock))
+        self.assertEqual(self.lc.sock, None)
         self.assertEqual(self.lc.delimiter, "<DELIMITER>")
         self.assertEqual(self.lc.buffer_size, 4096)
 
