@@ -1,8 +1,15 @@
 #!/usr/bin/bash python3
 
+import os
 import sys
 
-from lobbit.client import LobbitClient
+from typing import List
+
+lobbit_module = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../")
+sys.path.append(lobbit_module)
+
+if lobbit_module in sys.path:
+    from lobbit.client import LobbitClient
 
 
 class LobbitREPL:
@@ -27,7 +34,10 @@ class LobbitREPL:
             "user": self.user_subcmds
         }
         self.cmd = None
-        self.client = LobbitClient("", 0, [])
+        self.client = None
+        self.ip = None
+        self.port = None
+        self.files = None
 
     @staticmethod
     def display_help() -> None:
@@ -36,27 +46,27 @@ class LobbitREPL:
         """
         print("\n==== LOBBIT HELP MENU ====\n"
               "\nBase commands:\n"
-              "set - Set the value of a required input\n"
-              "file - perform an action on a file or list of files\n"
-              "user - perform an action on a user object\n"
+              "  set - Set the value of a required input\n"
+              "  file - perform an action on a file or list of files\n"
+              "  user - perform an action on a user object\n"
               "\nSet commands:\n"
-              "ip - set the IPv4 address of the remote server (REQUIRED)\n"
-              "port - set the port of the remote server (REQUIRED)\n"
+              "  ip - set the IPv4 address of the remote server (REQUIRED)\n"
+              "  port - set the port of the remote server (REQUIRED)\n"
               "\nFile commands:\n"
-              "add - add a file to the list of files to be uploaded\n"
-              "get - get a single file from the remote server\n"
-              "remove - delete a file from the remote server\n"
-              "list - list the files you have added for upload\n"
-              "move - move a file on the remote server\n"
-              "upload - upload the files you have added\n"
+              "  add - add a file to the list of files to be uploaded\n"
+              "  get - get a single file from the remote server\n"
+              "  remove - delete a file from the remote server\n"
+              "  list - list the files you have added for upload\n"
+              "  move - move a file on the remote server\n"
+              "  upload - upload the files you have added\n"
               "\nUser commands:\n"
-              "create - create a new user\n"
-              "update - update a password for an existing user\n"
-              "delete - delete an existing user\n"
-              "\nExamples:\n\n"
-              "Set IPv4 address       : set ip 100.200.0.1\n"
-              "Add 2 files for upload : file add /path/to/file1 /another/path/to/file2\n"
-              "Change user password   : user update <username> <password>\n")
+              "  create - create a new user\n"
+              "  update - update a password for an existing user\n"
+              "  delete - delete an existing user\n"
+              "\nExamples:\n"
+              "  Set IPv4 address       : set ip 100.200.0.1\n"
+              "  Add 2 files for upload : file add /path/to/file1 /another/path/to/file2\n"
+              "  Change user password   : user update <username> <password>\n")
 
     @staticmethod
     def exit(interrupt=False) -> None:
@@ -90,6 +100,8 @@ class LobbitREPL:
             print(f"[-] Error: {message}")
         if status == 3:
             print(f"[-] Bad input: {message}")
+        if status == 4:
+            print(f"[*] Incomplete input: {message}")
 
     def run(self) -> None:
         """
@@ -101,37 +113,63 @@ class LobbitREPL:
                 self.cmd = input(self.prompt)
                 if self.cmd == "":
                     continue
-                self.parse_cmd()
+                self.verify_cmd_syntax()
             self.exit()
         except KeyboardInterrupt:
             self.exit(True)
 
-    def parse_cmd(self) -> None:
+    def verify_cmd_syntax(self) -> None:
         """
-        Parses input from the user
+        Verifies that the base and sub commands provided by
+        the user are valid
         """
-        cmds = self.cmd.split(" ")
-        len_cmds = len(cmds)
+        cmd_split = self.cmd.split(" ")
+        len_cmds = len(cmd_split)
         if len_cmds == 1:
             self.handle_single_cmd()
             return
-        i = 0
-        while i < len_cmds:
-            if i == 0:
-                if not self.is_base_cmd(cmds[i]):
-                    self.alert(f"unknown command '{self.cmd}'", 3)
-                    i += 1
-                    continue
-                i += 1
-            elif i == 1:
-                if not self.is_sub_cmd(cmds[i]):
-                    self.alert(f"unknown command '{self.cmd}'", 3)
-                    i += 1
-                    continue
-                i += 1
+        if len_cmds == 2:
+            if not self.is_base_cmd(cmd_split[0]) or not self.is_sub_cmd(cmd_split[1]):
+                self.alert(f"unknown command '{self.cmd}'", 3)
             else:
-                i += 1
-                continue
+                self.alert(f"'{self.cmd}'", 4)
+            return
+        self.parse_cmd(cmd_split)
+
+    def parse_cmd(self, cmd_split: List) -> None:
+        """
+        Verifies a complete command to ensure the arguments
+        passed in are valid
+
+        Args:
+            cmd_split (List) : list of strings that make up a full
+                               command
+        """
+        if cmd_split[0] == "set":
+            if cmd_split[1] == "ip":
+                self.handle_ip()
+            elif cmd_split[1] == "port":
+                self.handle_port()
+        if cmd_split[0] == "file":
+            if cmd_split[1] == "add":
+                self.handle_add()
+            if cmd_split[1] == "get":
+                self.handle_get()
+            if cmd_split[1] == "remove":
+                self.handle_remove()
+            if cmd_split[1] == "move":
+                self.handle_move()
+            if cmd_split[1] == "list":
+                self.handle_list()
+            if cmd_split[1] == "upload":
+                self.handle_upload()
+        if cmd_split[0] == "user":
+            if cmd_split[1] == "create":
+                self.handle_create()
+            if cmd_split[1] == "update":
+                self.handle_update()
+            if cmd_split[1] == "delete":
+                self.handle_delete()
 
     def handle_single_cmd(self) -> None:
         """
@@ -141,7 +179,9 @@ class LobbitREPL:
         if self.cmd == "help":
             self.display_help()
         elif self.is_base_cmd(self.cmd):
-            self.alert(f"incomplete command '{self.cmd}'", 3)
+            self.alert(f"'{self.cmd}'", 4)
+        elif self.cmd == "quit":
+            self.exit()
         else:
             self.alert(f"unknown command '{self.cmd}'", 3)
 
@@ -153,6 +193,8 @@ class LobbitREPL:
 
         Args:
             value (str) : the value to check
+        Returns:
+            bool: True if the value is a valid base command
         """
         return value in self.cmd_map.keys() or (value == "" or value == "help")
 
@@ -165,20 +207,19 @@ class LobbitREPL:
         Args:
             value (str) : the value to check
         Returns:
-            tuple: base command, sub command
+            bool: True if the value is a valid sub command
         """
         for key in self.cmd_map:
             if value in self.cmd_map[key]:
                 return True
         return False
 
-    def set_value(self, value: str, sub_cmd: str) -> None:
+    def set_value(self, value: str) -> None:
         """
         Sets either the IPv4 address or the port number
 
         Args:
             value (str)   : the value to set
-            sub_cmd (str) : command that dictates which to set
         """
         pass
 

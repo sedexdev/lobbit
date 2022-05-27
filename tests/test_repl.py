@@ -31,6 +31,10 @@ class TestLobbitREPL(unittest.TestCase):
             "user": self.repl.user_subcmds
         })
         self.assertEqual(self.repl.cmd, None)
+        self.assertEqual(self.repl.client, None)
+        self.assertEqual(self.repl.ip, None)
+        self.assertEqual(self.repl.port, None)
+        self.assertEqual(self.repl.files, None)
 
     def test_quit_command_exits_repl(self) -> None:
         """
@@ -95,7 +99,7 @@ class TestLobbitREPL(unittest.TestCase):
         self.repl.cmd = "set"
         with patch("sys.stdout", new=StringIO()) as stdout:
             self.repl.handle_single_cmd()
-            self.assertIn("incomplete command", stdout.getvalue())
+            self.assertIn("Incomplete input", stdout.getvalue())
 
     def test_handle_single_cmd_method_displays_unknown_command(self) -> None:
         """
