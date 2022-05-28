@@ -1,9 +1,10 @@
 #!/usr/bin/bash python3
 
+import ipaddress
 import os
 import sys
 
-from typing import List
+from typing import List, Union
 
 lobbit_module = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../")
 sys.path.append(lobbit_module)
@@ -25,19 +26,31 @@ class LobbitREPL:
         Constructor for the LobbitREPL class
         """
         self.prompt = "lobbit> "
-        self.set_subcmds = ["ip", "port"]
-        self.file_subcmds = ["add", "get", "remove", "move", "list", "upload"]
-        self.user_subcmds = ["create", "update", "delete"]
         self.cmd_map = {
-            "set": self.set_subcmds,
-            "file": self.file_subcmds,
-            "user": self.user_subcmds
+            "set": {
+                "ip": self.handle_ip,
+                "port": self.handle_port
+            },
+            "file": {
+                "add": self.handle_add,
+                "get": self.handle_get,
+                "remove": self.handle_remove,
+                "move": self.handle_move,
+                "list": self.handle_list,
+                "upload": self.handle_upload
+            },
+            "user": {
+                "create": self.handle_create,
+                "update": self.handle_update,
+                "delete": self.handle_delete
+            }
         }
         self.cmd = None
+        self.args = None
         self.client = None
-        self.ip = None
-        self.port = None
-        self.files = None
+        self.ip = ""
+        self.port = -1
+        self.files = []
 
     @staticmethod
     def display_help() -> None:
@@ -139,37 +152,18 @@ class LobbitREPL:
     def parse_cmd(self, cmd_split: List) -> None:
         """
         Verifies a complete command to ensure the arguments
-        passed in are valid
+        passed in are valid. If the first two commands are valid
+        then the correct handler method is called from the
+        <self.cmd_map> to parse the commands arguments
 
         Args:
             cmd_split (List) : list of strings that make up a full
                                command
         """
-        if cmd_split[0] == "set":
-            if cmd_split[1] == "ip":
-                self.handle_ip()
-            elif cmd_split[1] == "port":
-                self.handle_port()
-        if cmd_split[0] == "file":
-            if cmd_split[1] == "add":
-                self.handle_add()
-            if cmd_split[1] == "get":
-                self.handle_get()
-            if cmd_split[1] == "remove":
-                self.handle_remove()
-            if cmd_split[1] == "move":
-                self.handle_move()
-            if cmd_split[1] == "list":
-                self.handle_list()
-            if cmd_split[1] == "upload":
-                self.handle_upload()
-        if cmd_split[0] == "user":
-            if cmd_split[1] == "create":
-                self.handle_create()
-            if cmd_split[1] == "update":
-                self.handle_update()
-            if cmd_split[1] == "delete":
-                self.handle_delete()
+        base = cmd_split[0]
+        sub = cmd_split[1]
+        self.args = cmd_split[2:]
+        self.cmd_map.get(base).get(sub)()
 
     def handle_single_cmd(self) -> None:
         """
@@ -210,16 +204,136 @@ class LobbitREPL:
             bool: True if the value is a valid sub command
         """
         for key in self.cmd_map:
-            if value in self.cmd_map[key]:
+            if value in self.cmd_map[key].keys():
                 return True
         return False
 
-    def set_value(self, value: str) -> None:
+    def valid_ip(self) -> Union[str, bool]:
         """
-        Sets either the IPv4 address or the port number
+        Checks that the value of <self.ip> is a valid IPv4 address
 
-        Args:
-            value (str)   : the value to set
+        Returns:
+            str : the value of <ip> if a ValueError is not raised
+        """
+        try:
+            return str(ipaddress.ip_address(self.ip))
+        except ValueError:
+            return False
+
+    def valid_port(self) -> bool:
+        """
+        Checks that the value of <port> is an integer from 1-65535
+
+        Returns:
+            bool : True if valid, False if not
+        """
+        try:
+            return 1 <= int(self.port) <= 65535
+        except TypeError:
+            return False
+        except ValueError:
+            return False
+
+    def valid_path(self) -> bool:
+        """
+        Checks the system path passed in as <file_path> to ensure
+        that a valid file object can be found at the path
+
+        Returns:
+            bool : True is path is a file, False if not
+        """
+        if not self.files:
+            return False
+        for file_path in self.files:
+            try:
+                if not os.path.isabs(file_path) or not os.path.isabs(f"{os.getcwd()}/{file_path}"):
+                    return False
+            except TypeError:
+                return False
+        return True
+
+    def handle_ip(self) -> None:
+        """
+        Process the set ip command
+        """
+        if len(self.args) > 1:
+            self.alert("too many arguments", 3)
+            return
+        self.ip = self.args[0]
+        if self.valid_ip():
+            self.alert(f"IP address set to '{self.args[0]}'", 1)
+            return
+        self.ip = ""
+        self.alert(f"invalid IP address '{self.args[0]}'", 2)
+
+    def handle_port(self) -> None:
+        """
+        Process the set port command
+        """
+        if len(self.args) > 1:
+            self.alert("too many arguments", 3)
+            return
+        try:
+            self.port = int(self.args[0])
+            if self.valid_port():
+                self.alert(f"Port number set to '{self.args[0]}'", 1)
+                return
+            self.port = -1
+            self.alert(f"invalid port number '{self.args[0]}'", 2)
+        except ValueError:
+            self.alert(f"invalid port number '{self.args[0]}'", 2)
+
+    def handle_add(self) -> None:
+        """
+        Process the file add command
+        """
+        pass
+
+    def handle_get(self) -> None:
+        """
+        Process the file get command
+        """
+        pass
+
+    def handle_remove(self) -> None:
+        """
+        Process the file remove command
+        """
+        pass
+
+    def handle_move(self) -> None:
+        """
+        Process the file move command
+        """
+        pass
+
+    def handle_list(self) -> None:
+        """
+        Process the file list command
+        """
+        pass
+
+    def handle_upload(self) -> None:
+        """
+        Process the file upload command
+        """
+        pass
+
+    def handle_create(self) -> None:
+        """
+        Process the user create command
+        """
+        pass
+
+    def handle_update(self) -> None:
+        """
+        Process the user update command
+        """
+        pass
+
+    def handle_delete(self) -> None:
+        """
+        Process the user delete command
         """
         pass
 
