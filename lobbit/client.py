@@ -1,10 +1,9 @@
-import ipaddress
 import os
 import socket
 import sys
 import time
 
-from typing import Dict, List, Union
+from typing import Dict, List
 
 
 class LobbitClient:
@@ -73,44 +72,3 @@ class LobbitClient:
             file_sizes_dict[file] = os.path.getsize(file)
         return file_sizes_dict
 
-    def valid_ip(self) -> Union[str, bool]:
-        """
-        Checks that the value of <self.ip> is a valid IPv4 address
-
-        Returns:
-            str : the value of <ip> if a ValueError is not raised
-        """
-        try:
-            return str(ipaddress.ip_address(self.ip))
-        except ValueError:
-            return False
-
-    def valid_port(self) -> bool:
-        """
-        Checks that the value of <port> is an integer from 1-65535
-
-        Returns:
-            bool : True if valid, False if not
-        """
-        try:
-            return 1 <= int(self.port) <= 65535
-        except TypeError:
-            return False
-        except ValueError:
-            return False
-
-    def valid_path(self) -> bool:
-        """
-        Checks the system path passed in as <file_path> to ensure
-        that a valid file object can be found at the path
-
-        Returns:
-            bool : True is path is a file, False if not
-        """
-        for file_path in self.files:
-            try:
-                if os.path.isabs(file_path):
-                    return os.path.isfile(file_path)
-                return os.path.isfile(f"{os.getcwd()}/{file_path}")
-            except TypeError:
-                return False
