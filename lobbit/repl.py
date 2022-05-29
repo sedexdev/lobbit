@@ -25,7 +25,7 @@ class LobbitREPL:
         """
         Constructor for the LobbitREPL class
         """
-        self.prompt = "lobbit> "
+        self.prompt = "\033[91m" + "lobbit> " + "\033[39m"
         self.cmd_map = {
             "set": {
                 "ip": self.handle_ip,
@@ -33,9 +33,6 @@ class LobbitREPL:
             },
             "file": {
                 "add": self.handle_add,
-                "get": self.handle_get,
-                "remove": self.handle_remove,
-                "move": self.handle_move,
                 "list": self.handle_list,
                 "upload": self.handle_upload
             },
@@ -49,7 +46,7 @@ class LobbitREPL:
         self.args = None
         self.client = None
         self.ip = ""
-        self.port = -1
+        self.port = 0
         self.files = []
 
     @staticmethod
@@ -67,10 +64,7 @@ class LobbitREPL:
               "  port - set the port of the remote server (REQUIRED)\n"
               "\nFile commands:\n"
               "  add - add a file to the list of files to be uploaded\n"
-              "  get - get a single file from the remote server\n"
-              "  remove - delete a file from the remote server\n"
               "  list - list the files you have added for upload\n"
-              "  move - move a file on the remote server\n"
               "  upload - upload the files you have added\n"
               "\nUser commands:\n"
               "  create - create a new user\n"
@@ -99,9 +93,10 @@ class LobbitREPL:
         execution of a command or when an error occurs. The statuses
         are:
 
-        1: success
-        2: error
-        3: bad input
+        1: Successful command execution
+        2: Error
+        3: Bad input
+        4: Incomplete command
 
         Args:
             message (str) : alert message to display
@@ -141,12 +136,16 @@ class LobbitREPL:
         if len_cmds == 1:
             self.handle_single_cmd()
             return
-        if len_cmds == 2:
-            if not self.is_base_cmd(cmd_split[0]) or not self.is_sub_cmd(cmd_split[1]):
-                self.alert(f"unknown command '{self.cmd}'", 3)
-            else:
-                self.alert(f"'{self.cmd}'", 4)
+        if not self.is_base_cmd(cmd_split[0]) or not self.is_sub_cmd(cmd_split[1]):
+            self.alert(f"unknown command '{self.cmd}'", 3)
             return
+        else:
+            if len(cmd_split) == 2:
+                if cmd_split[0] == "file" and cmd_split[1] == "list":
+                    self.handle_list()
+                    return
+                self.alert(f"'{self.cmd}'", 4)
+                return
         self.parse_cmd(cmd_split)
 
     def parse_cmd(self, cmd_split: List) -> None:
@@ -234,23 +233,25 @@ class LobbitREPL:
         except ValueError:
             return False
 
-    def valid_path(self) -> bool:
+    @staticmethod
+    def valid_path(file_path: str) -> bool:
         """
         Checks the system path passed in as <file_path> to ensure
         that a valid file object can be found at the path
 
+        Args:
+            file_path (str) : the path to validate
         Returns:
             bool : True is path is a file, False if not
         """
-        if not self.files:
+        try:
+            if os.path.isabs(file_path):
+                path = file_path
+            else:
+                path = f"{os.getcwd()}/{file_path}"
+            return os.path.isfile(path)
+        except TypeError:
             return False
-        for file_path in self.files:
-            try:
-                if not os.path.isabs(file_path) or not os.path.isabs(f"{os.getcwd()}/{file_path}"):
-                    return False
-            except TypeError:
-                return False
-        return True
 
     def handle_ip(self) -> None:
         """
@@ -260,11 +261,11 @@ class LobbitREPL:
             self.alert("too many arguments", 3)
             return
         self.ip = self.args[0]
-        if self.valid_ip():
-            self.alert(f"IP address set to '{self.args[0]}'", 1)
+        if not self.valid_ip():
+            self.ip = ""
+            self.alert(f"invalid IP address '{self.args[0]}'", 2)
             return
-        self.ip = ""
-        self.alert(f"invalid IP address '{self.args[0]}'", 2)
+        self.alert(f"IP address set to '{self.args[0]}'", 1)
 
     def handle_port(self) -> None:
         """
@@ -275,11 +276,11 @@ class LobbitREPL:
             return
         try:
             self.port = int(self.args[0])
-            if self.valid_port():
-                self.alert(f"Port number set to '{self.args[0]}'", 1)
+            if not self.valid_port():
+                self.port = 0
+                self.alert(f"invalid port number '{self.args[0]}'", 2)
                 return
-            self.port = -1
-            self.alert(f"invalid port number '{self.args[0]}'", 2)
+            self.alert(f"Port number set to '{self.args[0]}'", 1)
         except ValueError:
             self.alert(f"invalid port number '{self.args[0]}'", 2)
 
@@ -287,31 +288,24 @@ class LobbitREPL:
         """
         Process the file add command
         """
-        pass
-
-    def handle_get(self) -> None:
-        """
-        Process the file get command
-        """
-        pass
-
-    def handle_remove(self) -> None:
-        """
-        Process the file remove command
-        """
-        pass
-
-    def handle_move(self) -> None:
-        """
-        Process the file move command
-        """
-        pass
+        for arg in self.args:
+            if not self.valid_path(arg):
+                self.alert(f"invalid file path '{arg}'", 2)
+                continue
+            if os.path.isabs(arg):
+                self.files.append(arg)
+            else:
+                self.files.append(f"{os.getcwd()}/{arg}")
 
     def handle_list(self) -> None:
         """
         Process the file list command
         """
-        pass
+        if not self.files:
+            self.alert("file list is empty", 2)
+            return
+        for file in self.files:
+            print(file)
 
     def handle_upload(self) -> None:
         """

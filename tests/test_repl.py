@@ -15,16 +15,19 @@ class TestLobbitREPL(unittest.TestCase):
         """
         Initialises test case variables
         """
+        base_dir = os.path.abspath(os.path.dirname(__file__))
         self.repl = LobbitREPL()
-        self.good_path = f"{os.path.abspath(os.path.dirname(__file__))}/test_data/blank"
-        self.bad_path = f"{os.path.abspath(os.path.dirname(__file__))}/test_data/tank"
+        self.good_path = f"{base_dir}/test_data/blank"
+        self.good_path_2 = f"{base_dir}/test_data/dates.txt"
+        self.bad_path = f"{base_dir}/test_data/test.pdf"
+        self.bad_path_2 = f"{base_dir}/../lobbit/lobbit/repl.py"
 
     def test_LobbitREPL_class_initialises_correctly(self) -> None:
         """
         Tests that the correct attributes are assigned when
         a new instance of LobbitREPL is created
         """
-        self.assertEqual(self.repl.prompt, "lobbit> ")
+        self.assertEqual(self.repl.prompt, "\033[91m" + "lobbit> " + "\033[39m")
         self.cmd_map = {
             "set": {
                 "ip": self.repl.handle_ip,
@@ -32,9 +35,6 @@ class TestLobbitREPL(unittest.TestCase):
             },
             "file": {
                 "add": self.repl.handle_add,
-                "get": self.repl.handle_get,
-                "remove": self.repl.handle_remove,
-                "move": self.repl.handle_move,
                 "list": self.repl.handle_list,
                 "upload": self.repl.handle_upload
             },
@@ -48,7 +48,7 @@ class TestLobbitREPL(unittest.TestCase):
         self.assertEqual(self.repl.args, None)
         self.assertEqual(self.repl.client, None)
         self.assertEqual(self.repl.ip, "")
-        self.assertEqual(self.repl.port, -1)
+        self.assertEqual(self.repl.port, 0)
         self.assertEqual(self.repl.files, [])
 
     def test_quit_command_exits_repl(self) -> None:
@@ -156,8 +156,7 @@ class TestLobbitREPL(unittest.TestCase):
         Tests that the valid_path function returns True if a valid file
         path is passed in as an argument
         """
-        self.repl.files.append(f"{os.path.abspath(os.path.dirname(__file__))}/test_data/blank")
-        is_valid_path = self.repl.valid_path()
+        is_valid_path = self.repl.valid_path(self.good_path)
         self.assertTrue(is_valid_path)
 
     def test_valid_path_returns_false(self) -> None:
@@ -165,16 +164,15 @@ class TestLobbitREPL(unittest.TestCase):
         Tests that the valid_path function returns False if an invalid file
         path is passed in as an argument
         """
-        is_valid_path = self.repl.valid_path()
+        is_valid_path = self.repl.valid_path(self.bad_path)
         self.assertFalse(is_valid_path)
 
-    def test_valid_path_returns_false_with_wrong_value(self) -> None:
+    def test_valid_path_returns_false_with_type_error(self) -> None:
         """
         Tests that the valid_path function returns False if an invalid type
         is passed in as an argument
         """
-        self.repl.files.append(100)
-        is_valid_path = self.repl.valid_path()
+        is_valid_path = self.repl.valid_path(1)
         self.assertFalse(is_valid_path)
 
     def test_handle_ip_sets_ip_correctly(self) -> None:
@@ -213,4 +211,69 @@ class TestLobbitREPL(unittest.TestCase):
         """
         self.repl.cmd = "set port 123456789"
         self.repl.parse_cmd(self.repl.cmd.split(" "))
-        self.assertEqual(self.repl.port, -1)
+        self.assertEqual(self.repl.port, 0)
+
+    def test_handle_add_appends_file_path_to_list(self) -> None:
+        """
+        Tests that the <self.files> attribute List is updated when a
+        valid path is passed as an argument
+        """
+        self.repl.args = [self.good_path]
+        self.repl.handle_add()
+        self.assertIn(self.good_path, self.repl.files)
+
+    def test_handle_add_appends_multiple_file_paths_to_list(self) -> None:
+        """
+        Tests that the <self.files> attribute List is updated when multiple
+        valid paths are passed as arguments
+        """
+        self.repl.args = [self.good_path, self.good_path_2]
+        self.repl.handle_add()
+        self.assertIn(self.good_path, self.repl.files)
+        self.assertIn(self.good_path_2, self.repl.files)
+
+    def test_handle_add_does_not_append_to_list_with_bad_path(self) -> None:
+        """
+        Tests that the <self.files> attribute List is not updated if a bad
+        path is passed in as an argument
+        """
+        self.repl.args = [self.bad_path]
+        self.repl.handle_add()
+        self.assertEqual(self.repl.files, [])
+
+    def test_handle_add_does_not_append_to_list_with_bad_path_2(self) -> None:
+        """
+        Tests that the <self.files> attribute List is not updated if a bad
+        path is passed in as an argument
+        """
+        self.repl.args = [self.bad_path_2]
+        self.repl.handle_add()
+        self.assertEqual(self.repl.files, [])
+
+    def test_handle_add_updates_file_list_with_only_good_paths(self) -> None:
+        """
+        Tests that the <self.files> attribute List is only updated if a good
+        path is passed in as an argument
+        """
+        self.repl.args = [self.good_path, self.bad_path, self.bad_path_2]
+        self.repl.handle_add()
+        self.assertEqual(self.repl.files, [self.good_path])
+
+    def test_handle_list_prints_file_list(self) -> None:
+        """
+        Tests that the contents of the <self.files> attribute is displayed
+        to the user
+        """
+        self.repl.files.append(self.good_path)
+        with patch("sys.stdout", new=StringIO()) as stdout:
+            self.repl.handle_list()
+            self.assertIn(self.good_path, stdout.getvalue())
+
+    def test_handle_list_prints_error_with_empty_file_list(self) -> None:
+        """
+        Tests that an Error alert is displayed to the user if the
+        file list is empty when handle_list is called
+        """
+        with patch("sys.stdout", new=StringIO()) as stdout:
+            self.repl.handle_list()
+            self.assertIn("Error", stdout.getvalue())
