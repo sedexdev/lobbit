@@ -1,10 +1,11 @@
 #!/usr/bin/bash python3
 
+import cmd
 import ipaddress
 import os
 import sys
 
-from typing import List, Union
+from typing import List, Tuple, Union
 
 lobbit_module = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../")
 sys.path.append(lobbit_module)
@@ -13,19 +14,19 @@ if lobbit_module in sys.path:
     from lobbit.client import LobbitClient
 
 
-class LobbitREPL:
-    """
-    Class that implements the functionality of a terminal-based
-    Read Evaluate Print Loop. The REPL is used to configure the
-    network connection and add the files to be sent to the
-    server
-    """
+# noinspection PyArgumentList
+class REPLTest(cmd.Cmd):
+
+    intro_msg = "Welcome to the Lobbit File Transfer tool!"
+    intro_spacer = "=" * len(intro_msg)
+    intro = f"\n{intro_spacer}\n{intro_msg}\n{intro_spacer}\n"
+    prompt = "\033[91m" + "lobbit> " + "\033[39m"
 
     def __init__(self) -> None:
         """
-        Constructor for the LobbitREPL class
+        Constructor for the REPLTest class
         """
-        self.prompt = "\033[91m" + "lobbit> " + "\033[39m"
+        super().__init__()
         self.cmd_map = {
             "set": {
                 "ip": self.handle_ip,
@@ -42,29 +43,170 @@ class LobbitREPL:
                 "delete": self.handle_delete
             }
         }
-        self.cmd = None
-        self.args = None
         self.client = None
-        self.ip = ""
-        self.port = 0
+        self.ip = None
+        self.port = None
         self.files = []
 
+    # --- OVERLOADED CMD METHODS ---
+
+    def completedefault(self, text: str, line: str, begidx: int, endidx: int) -> List:
+        """
+        Provides tab completion for commands without a <complete_*()>
+        method associated with them
+
+        Args:
+            text (str)   : the string prefix to match
+            line (str)   : the current input line
+            begidx (int) : beginning index of the prefix text
+            endidx (int) : end index of the prefix text
+        Returns:
+            List : a List of matches for non-completed commands
+        """
+        tokens = line.split()
+        if tokens[0].strip() == "set":
+            return self.sub_cmd_matches("set", text)
+        if tokens[0].strip() == "file":
+            return self.sub_cmd_matches("file", text)
+        if tokens[0].strip() == "user":
+            return self.sub_cmd_matches("user", text)
+        return []
+
+    def emptyline(self) -> None:
+        """
+        Default action when no argument is entered on the
+        command line
+        """
+        return
+
+    # --- UTILITY METHODS ---
+
+    def split_args(self, args: str) -> Union[List, None]:
+        """
+        Splits the command arguments into a List and returns
+        the List to the calling method
+
+        Args:
+            args (str) : the base command arguments passed in by the user
+        Returns:
+            List : the arguments split on whitespace or None
+        """
+        if not args:
+            print(f"*** Incomplete command: '{self.lastcmd} ...'. Use 'help' for options")
+            return
+        return args.split(" ")
+
+    def sub_cmd_matches(self, base_cmd: str, text: str) -> List:
+        """
+        This helper method allows the program to apply the
+        autocomplete feature to sub-commands as well
+
+        Args:
+            base_cmd (str) : base command to check sub-commands for
+            text (str)     : the command passed in
+        Returns:
+            List : a list of matches found or an empty list
+        """
+        matches = []
+        n = len(text)
+        sub_cmds = self.cmd_map.get(base_cmd).keys()
+        for word in sub_cmds:
+            if word[:n] == text:
+                matches.append(word)
+        return matches
+
+    # --- DO METHODS ---
+
     @staticmethod
-    def display_help() -> None:
+    def do_quit(_) -> None:
+        """
+        Quits the program with a 0 exit status and prints a
+        message to the user
+        """
+        print("Bye!")
+        sys.exit(0)
+
+    def do_set(self, arg: str) -> None:
+        """
+        Sets a network parameter used to create a connection
+        to the server over an AF_INET instance of <socket.socket>
+
+        Args:
+            arg (str) : the base command arguments passed in by the user
+        """
+        args = self.split_args(arg)
+        if not args:
+            return
+        sub_cmds = self.cmd_map.get("set")
+        if args[0] not in sub_cmds.keys():
+            print(f"*** '{args[0]}' is not a valid sub-command of 'set'. Use 'help' for options'")
+            return
+        try:
+            sub_cmds.get(args[0])(args[1])
+        except IndexError:
+            arg_name = "<ipv4_address>" if args[0] == "ip" else "<port_number>"
+            print(f"*** '{self.lastcmd}' missing required argument: {arg_name}")
+
+    def do_file(self, arg: str) -> None:
+        """
+        Allows the user to add files to <self.files> for uploading, list
+        out the files that have been added, or upload the files
+        in <self.files>
+
+        Args:
+            arg (str) : the base command arguments passed in by the user
+        """
+        args = self.split_args(arg)
+        if not args:
+            return
+        sub_cmds = self.cmd_map.get("file")
+        if args[0] not in sub_cmds.keys():
+            print(f"*** '{args[0]}' is not a valid sub-command of 'file'. Use 'help' for options'")
+            return
+        if args[0] == "add":
+            sub_cmds.get(args[0])(args[1:])
+        else:
+            sub_cmds.get(args[0])()
+
+    def do_user(self, arg: str) -> None:
+        """
+        Allows the user to create and modify users. This method works
+        in conjunction with the <LobbitAPI> class that should be
+        running on the server instance to create, update, and delete
+        users from the backend database. Security is handled using the
+        classes in crypto.py
+
+        Args:
+            arg (str) : the base command arguments passed in by the user
+        """
+        self.split_args(arg)
+
+    def do_net(self, _) -> None:
+        """
+        Shows the current network socket configuration
+        """
+        print(f"IPv4 Address: {self.ip}")
+        print(f"Port number : {self.port}")
+
+    def do_help(self, arg: str) -> None:
         """
         Shows the help menu
+
+        Args:
+            arg (str) : the base command arguments passed in by the user
         """
         print("\n==== LOBBIT HELP MENU ====\n"
               "\nBase commands:\n"
-              "  set - Set the value of a required input\n"
+              "  set  - Set the value of a required network parameter\n"
               "  file - perform an action on a file or list of files\n"
               "  user - perform an action on a user object\n"
+              "  net  - display the current remote network parameters\n"
               "\nSet commands:\n"
-              "  ip - set the IPv4 address of the remote server (REQUIRED)\n"
+              "  ip   - set the IPv4 address of the remote server (REQUIRED)\n"
               "  port - set the port of the remote server (REQUIRED)\n"
               "\nFile commands:\n"
-              "  add - add a file to the list of files to be uploaded\n"
-              "  list - list the files you have added for upload\n"
+              "  add    - add a file to the list of files to be uploaded\n"
+              "  list   - list the files you have added for upload\n"
               "  upload - upload the files you have added\n"
               "\nUser commands:\n"
               "  create - create a new user\n"
@@ -75,137 +217,7 @@ class LobbitREPL:
               "  Add 2 files for upload : file add /path/to/file1 /another/path/to/file2\n"
               "  Change user password   : user update <username> <password>\n")
 
-    @staticmethod
-    def exit(interrupt=False) -> None:
-        """
-        Exits the REPL and returns the user to their terminal prompt
-
-        Args:
-            interrupt (bool) : states if KeyboardInterrupt quit the program
-        """
-        print("\nBye!") if interrupt else print("Bye!")
-        sys.exit(1)
-
-    @staticmethod
-    def alert(message: str, status: int) -> None:
-        """
-        Displays the message to the user upon either successful
-        execution of a command or when an error occurs. The statuses
-        are:
-
-        1: Successful command execution
-        2: Error
-        3: Bad input
-        4: Incomplete command
-
-        Args:
-            message (str) : alert message to display
-            status (int)  : indicates the level of alert
-        """
-        if status == 1:
-            print(f"[+] Success: {message}")
-        if status == 2:
-            print(f"[-] Error: {message}")
-        if status == 3:
-            print(f"[-] Bad input: {message}")
-        if status == 4:
-            print(f"[*] Incomplete input: {message}")
-
-    def run(self) -> None:
-        """
-        Starts the REPL and gets command line input from the
-        user for processing
-        """
-        try:
-            while self.cmd != "quit":
-                self.cmd = input(self.prompt)
-                if self.cmd == "":
-                    continue
-                self.verify_cmd_syntax()
-            self.exit()
-        except KeyboardInterrupt:
-            self.exit(True)
-
-    def verify_cmd_syntax(self) -> None:
-        """
-        Verifies that the base and sub commands provided by
-        the user are valid
-        """
-        cmd_split = self.cmd.split(" ")
-        len_cmds = len(cmd_split)
-        if len_cmds == 1:
-            self.handle_single_cmd()
-            return
-        if not self.is_base_cmd(cmd_split[0]) or not self.is_sub_cmd(cmd_split[1]):
-            self.alert(f"unknown command '{self.cmd}'", 3)
-            return
-        else:
-            if len(cmd_split) == 2:
-                if cmd_split[0] == "file" and cmd_split[1] == "list":
-                    self.handle_list()
-                    return
-                self.alert(f"'{self.cmd}'", 4)
-                return
-        self.parse_cmd(cmd_split)
-
-    def parse_cmd(self, cmd_split: List) -> None:
-        """
-        Verifies a complete command to ensure the arguments
-        passed in are valid. If the first two commands are valid
-        then the correct handler method is called from the
-        <self.cmd_map> to parse the commands arguments
-
-        Args:
-            cmd_split (List) : list of strings that make up a full
-                               command
-        """
-        base = cmd_split[0]
-        sub = cmd_split[1]
-        self.args = cmd_split[2:]
-        self.cmd_map.get(base).get(sub)()
-
-    def handle_single_cmd(self) -> None:
-        """
-        Process a single command and display the appropriate
-        output to the user
-        """
-        if self.cmd == "help":
-            self.display_help()
-        elif self.is_base_cmd(self.cmd):
-            self.alert(f"'{self.cmd}'", 4)
-        elif self.cmd == "quit":
-            self.exit()
-        else:
-            self.alert(f"unknown command '{self.cmd}'", 3)
-
-    def is_base_cmd(self, value: str) -> bool:
-        """
-        Checks to see if the value passed in is a base command and
-        returns the command if it is, otherwise a bad input warning
-        is sent to stdout
-
-        Args:
-            value (str) : the value to check
-        Returns:
-            bool: True if the value is a valid base command
-        """
-        return value in self.cmd_map.keys() or (value == "" or value == "help")
-
-    def is_sub_cmd(self, value: str) -> bool:
-        """
-        Checks to see if the value passed in is a sub command and
-        returns the sub command if it is, along with its parent command.
-        Otherwise, a bad input warning is sent to stdout
-
-        Args:
-            value (str) : the value to check
-        Returns:
-            bool: True if the value is a valid sub command
-        """
-        for key in self.cmd_map:
-            if value in self.cmd_map[key].keys():
-                return True
-        return False
+    # --- VALIDATION METHODS ---
 
     def valid_ip(self) -> Union[str, bool]:
         """
@@ -234,7 +246,7 @@ class LobbitREPL:
             return False
 
     @staticmethod
-    def valid_path(file_path: str) -> bool:
+    def valid_path(file_path: str) -> Tuple:
         """
         Checks the system path passed in as <file_path> to ensure
         that a valid file object can be found at the path
@@ -249,60 +261,65 @@ class LobbitREPL:
                 path = file_path
             else:
                 path = f"{os.getcwd()}/{file_path}"
-            return os.path.isfile(path)
+            if os.path.isfile(path):
+                return True, path
+            return False, None
         except TypeError:
-            return False
+            return False, None
 
-    def handle_ip(self) -> None:
+    # --- ACTION HANDLERS ---
+
+    def handle_ip(self, ip: str) -> None:
         """
         Process the set ip command
-        """
-        if len(self.args) > 1:
-            self.alert("too many arguments", 3)
-            return
-        self.ip = self.args[0]
-        if not self.valid_ip():
-            self.ip = ""
-            self.alert(f"invalid IP address '{self.args[0]}'", 2)
-            return
-        self.alert(f"IP address set to '{self.args[0]}'", 1)
 
-    def handle_port(self) -> None:
+        Args:
+            ip (str) : ip address passed into 'set ip'
+        """
+        self.ip = ip
+        if not self.valid_ip():
+            print(f"*** Invalid IPv4 address: '{ip}'")
+            self.ip = ""
+            return
+
+    def handle_port(self, port: int) -> None:
         """
         Process the set port command
-        """
-        if len(self.args) > 1:
-            self.alert("too many arguments", 3)
-            return
-        try:
-            self.port = int(self.args[0])
-            if not self.valid_port():
-                self.port = 0
-                self.alert(f"invalid port number '{self.args[0]}'", 2)
-                return
-            self.alert(f"Port number set to '{self.args[0]}'", 1)
-        except ValueError:
-            self.alert(f"invalid port number '{self.args[0]}'", 2)
 
-    def handle_add(self) -> None:
+        Args:
+            port (int) : port number passed into 'set port'
+        """
+        self.port = int(port)
+        if not self.valid_port():
+            print(f"*** Invalid port number: '{port}'")
+            self.port = ""
+            return
+
+    def handle_add(self, files: List) -> None:
         """
         Process the file add command
+
+        Args:
+            files (List) : file paths to be added to the upload list
         """
-        for arg in self.args:
-            if not self.valid_path(arg):
-                self.alert(f"invalid file path '{arg}'", 2)
-                continue
-            if os.path.isabs(arg):
-                self.files.append(arg)
+        if not files:
+            print(f"*** '{self.lastcmd}' missing required argument: <file_path(s)>")
+            return
+        for file in files:
+            path_tuple = self.valid_path(file)
+            if not path_tuple[0]:
+                self.files = []
+                print(f"*** {file} is not valid file path. The upload list has not been modified")
+                return
             else:
-                self.files.append(f"{os.getcwd()}/{arg}")
+                self.files.append(path_tuple[1])
 
     def handle_list(self) -> None:
         """
         Process the file list command
         """
         if not self.files:
-            self.alert("file list is empty", 2)
+            print("*** No files have been added for upload")
             return
         for file in self.files:
             print(file)
@@ -311,35 +328,39 @@ class LobbitREPL:
         """
         Process the file upload command
         """
-        pass
+        if not self.files:
+            print("*** No files have been added for upload")
+            return
+        if not self.ip and not self.port:
+            print("*** Invalid network parameters")
+            return
+        client = LobbitClient(self.ip, self.port, self.files)
+        client.lobbit_connect()
+        client.lobbit_send()
 
     def handle_create(self) -> None:
         """
         Process the user create command
         """
-        pass
+        print("Handling user create")
 
     def handle_update(self) -> None:
         """
         Process the user update command
         """
-        pass
+        print("Handling user update")
 
     def handle_delete(self) -> None:
         """
         Process the user delete command
         """
-        pass
+        print("Handling user delete")
 
 
-def main() -> None:
-    """
-    Main function to run the Lobbit tool's interactive REPL
-    in the client's terminal
-    """
-    repl = LobbitREPL()
-    repl.run()
-
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    try:
+        repl = REPLTest()
+        repl.cmdloop()
+    except KeyboardInterrupt:
+        print("\nBye!")
+        sys.exit(0)
