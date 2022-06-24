@@ -44,11 +44,9 @@ class TestLobbitREPL(unittest.TestCase):
                 "delete": self.repl.handle_delete
             }
         }
-        self.assertEqual(self.repl.cmd, None)
-        self.assertEqual(self.repl.args, None)
         self.assertEqual(self.repl.client, None)
-        self.assertEqual(self.repl.ip, "")
-        self.assertEqual(self.repl.port, 0)
+        self.assertEqual(self.repl.ip, None)
+        self.assertEqual(self.repl.port, None)
         self.assertEqual(self.repl.files, [])
 
     def test_quit_command_exits_repl(self) -> None:
@@ -57,67 +55,8 @@ class TestLobbitREPL(unittest.TestCase):
         when the command 'quit' is entered
         """
         with self.assertRaises(SystemExit) as se:
-            self.repl.cmd = "quit"
-            self.repl.run()
-            self.assertEqual(se.exception.code, 1)
-
-    def test_is_base_cmd_returns_true(self) -> None:
-        """
-        Tests that the is_base_cmd method returns True if
-        a valid base command is passed in
-        """
-        self.assertTrue(self.repl.is_base_cmd("set"))
-
-    def test_is_base_cmd_returns_false(self) -> None:
-        """
-        Tests that the is_base_cmd method returns False if
-        an invalid base command is passed in
-        """
-        self.assertFalse(self.repl.is_base_cmd("test"))
-
-    def test_is_sub_cmd_returns_true(self) -> None:
-        """
-        Tests that the is_sub_cmd method returns True if a valid
-        sub command is passed in
-        """
-        self.assertTrue(self.repl.is_sub_cmd("ip"))
-
-    def test_is_sub_cmd_returns_false(self) -> None:
-        """
-        Tests that the is_sub_cmd method returns False if
-        an invalid sub command is passed in
-        """
-        self.assertFalse(self.repl.is_sub_cmd("test"))
-
-    def test_handle_single_cmd_method_displays_help(self) -> None:
-        """
-        Tests that the handle_single_cmd method displays the help
-        text when the command 'help' is types
-        """
-        self.repl.cmd = "help"
-        with patch("sys.stdout", new=StringIO()) as stdout:
-            self.repl.handle_single_cmd()
-            self.assertIn("\n==== LOBBIT HELP MENU ====\n", stdout.getvalue())
-
-    def test_handle_single_cmd_method_displays_incomplete_command(self) -> None:
-        """
-        Tests that the handle_single_cmd method displays an error
-        message when a single command is entered
-        """
-        self.repl.cmd = "set"
-        with patch("sys.stdout", new=StringIO()) as stdout:
-            self.repl.handle_single_cmd()
-            self.assertIn("Incomplete input", stdout.getvalue())
-
-    def test_handle_single_cmd_method_displays_unknown_command(self) -> None:
-        """
-        Tests that the handle_single_cmd method displays an error
-        message when a single unknown command is entered
-        """
-        self.repl.cmd = "test"
-        with patch("sys.stdout", new=StringIO()) as stdout:
-            self.repl.handle_single_cmd()
-            self.assertIn("unknown command", stdout.getvalue())
+            self.repl.do_quit(None)
+            self.assertEqual(se.exception.code, 0)
 
     def test_valid_ip_returns_ip(self) -> None:
         """
@@ -157,7 +96,7 @@ class TestLobbitREPL(unittest.TestCase):
         path is passed in as an argument
         """
         is_valid_path = self.repl.valid_path(self.good_path)
-        self.assertTrue(is_valid_path)
+        self.assertTrue(is_valid_path[0])
 
     def test_valid_path_returns_false(self) -> None:
         """
@@ -165,53 +104,16 @@ class TestLobbitREPL(unittest.TestCase):
         path is passed in as an argument
         """
         is_valid_path = self.repl.valid_path(self.bad_path)
-        self.assertFalse(is_valid_path)
+        self.assertFalse(is_valid_path[0])
 
+    # noinspection PyTypeChecker
     def test_valid_path_returns_false_with_type_error(self) -> None:
         """
         Tests that the valid_path function returns False if an invalid type
         is passed in as an argument
         """
         is_valid_path = self.repl.valid_path(1)
-        self.assertFalse(is_valid_path)
-
-    def test_handle_ip_sets_ip_correctly(self) -> None:
-        """
-        Tests that the handle_ip method sets the <self.ip> attribute
-        correctly when a valid IPv4 address is passed as an argument
-        """
-        self.repl.cmd = "set ip 192.168.0.1"
-        self.repl.parse_cmd(self.repl.cmd.split(" "))
-        self.assertEqual(self.repl.ip, "192.168.0.1")
-
-    def test_handle_ip_sets_ip_back_to_empty_string(self) -> None:
-        """
-        Tests that the handle_ip method sets the <self.ip> attribute
-        back to an empty string when an invalid IPv4 address is passed as
-        an argument
-        """
-        self.repl.cmd = "set ip test"
-        self.repl.parse_cmd(self.repl.cmd.split(" "))
-        self.assertEqual(self.repl.ip, "")
-
-    def test_handle_ip_sets_port_correctly(self) -> None:
-        """
-        Tests that the handle_port method sets the <self.port> attribute
-        correctly when a valid port number is passed as an argument
-        """
-        self.repl.cmd = "set port 1234"
-        self.repl.parse_cmd(self.repl.cmd.split(" "))
-        self.assertEqual(self.repl.port, 1234)
-
-    def test_handle_ip_sets_port_back_to_empty_string(self) -> None:
-        """
-        Tests that the handle_port method sets the <self.port> attribute
-        back to an empty string when an invalid port number is passed as
-        an argument
-        """
-        self.repl.cmd = "set port 123456789"
-        self.repl.parse_cmd(self.repl.cmd.split(" "))
-        self.assertEqual(self.repl.port, 0)
+        self.assertFalse(is_valid_path[0])
 
     def test_handle_add_appends_file_path_to_list(self) -> None:
         """
@@ -219,7 +121,7 @@ class TestLobbitREPL(unittest.TestCase):
         valid path is passed as an argument
         """
         self.repl.args = [self.good_path]
-        self.repl.handle_add()
+        self.repl.handle_add([self.good_path])
         self.assertIn(self.good_path, self.repl.files)
 
     def test_handle_add_appends_multiple_file_paths_to_list(self) -> None:
@@ -227,8 +129,7 @@ class TestLobbitREPL(unittest.TestCase):
         Tests that the <self.files> attribute List is updated when multiple
         valid paths are passed as arguments
         """
-        self.repl.args = [self.good_path, self.good_path_2]
-        self.repl.handle_add()
+        self.repl.handle_add([self.good_path, self.good_path_2])
         self.assertIn(self.good_path, self.repl.files)
         self.assertIn(self.good_path_2, self.repl.files)
 
@@ -237,8 +138,7 @@ class TestLobbitREPL(unittest.TestCase):
         Tests that the <self.files> attribute List is not updated if a bad
         path is passed in as an argument
         """
-        self.repl.args = [self.bad_path]
-        self.repl.handle_add()
+        self.repl.handle_add([self.bad_path])
         self.assertEqual(self.repl.files, [])
 
     def test_handle_add_does_not_append_to_list_with_bad_path_2(self) -> None:
@@ -246,18 +146,16 @@ class TestLobbitREPL(unittest.TestCase):
         Tests that the <self.files> attribute List is not updated if a bad
         path is passed in as an argument
         """
-        self.repl.args = [self.bad_path_2]
-        self.repl.handle_add()
+        self.repl.handle_add([self.bad_path_2])
         self.assertEqual(self.repl.files, [])
 
-    def test_handle_add_updates_file_list_with_only_good_paths(self) -> None:
+    def test_handle_add_does_not_update_file_list(self) -> None:
         """
         Tests that the <self.files> attribute List is only updated if a good
         path is passed in as an argument
         """
-        self.repl.args = [self.good_path, self.bad_path, self.bad_path_2]
-        self.repl.handle_add()
-        self.assertEqual(self.repl.files, [self.good_path])
+        self.repl.handle_add([self.good_path, self.bad_path, self.bad_path_2])
+        self.assertEqual(self.repl.files, [])
 
     def test_handle_list_prints_file_list(self) -> None:
         """
