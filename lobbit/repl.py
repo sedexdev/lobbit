@@ -15,7 +15,7 @@ if lobbit_module in sys.path:
 
 
 # noinspection PyArgumentList
-class REPLTest(cmd.Cmd):
+class LobbitREPL(cmd.Cmd):
 
     intro_msg = "Welcome to the Lobbit File Transfer tool!"
     intro_spacer = "=" * len(intro_msg)
@@ -79,6 +79,15 @@ class REPLTest(cmd.Cmd):
         """
         return
 
+    def default(self, line: str) -> None:
+        """
+        Default output when a user inputs incorrect syntax
+
+        Args:
+             line (str) : the current input line
+        """
+        self.error("Unknown command entered")
+
     # --- UTILITY METHODS ---
 
     def split_args(self, args: str) -> Union[List, None]:
@@ -92,7 +101,7 @@ class REPLTest(cmd.Cmd):
             List : the arguments split on whitespace or None
         """
         if not args:
-            print(f"*** Incomplete command: '{self.lastcmd} ...'. Use 'help' for options")
+            self.error(f"Incomplete command: '{self.lastcmd} ...'")
             return
         return args.split(" ")
 
@@ -114,6 +123,16 @@ class REPLTest(cmd.Cmd):
             if word[:n] == text:
                 matches.append(word)
         return matches
+
+    @staticmethod
+    def error(msg: str) -> None:
+        """
+        Displays a message to the user in response to invalid input
+
+        Args:
+             msg (str)  : message to display
+        """
+        print(f"[-] Error: {msg}")
 
     # --- DO METHODS ---
 
@@ -139,13 +158,13 @@ class REPLTest(cmd.Cmd):
             return
         sub_cmds = self.cmd_map.get("set")
         if args[0] not in sub_cmds.keys():
-            print(f"*** '{args[0]}' is not a valid sub-command of 'set'. Use 'help' for options'")
+            self.error(f"'{args[0]}' is not a valid sub-command of 'set'")
             return
         try:
             sub_cmds.get(args[0])(args[1])
         except IndexError:
             arg_name = "<ipv4_address>" if args[0] == "ip" else "<port_number>"
-            print(f"*** '{self.lastcmd}' missing required argument: {arg_name}")
+            self.error(f"'{self.lastcmd}' missing required argument: {arg_name}")
 
     def do_file(self, arg: str) -> None:
         """
@@ -161,13 +180,14 @@ class REPLTest(cmd.Cmd):
             return
         sub_cmds = self.cmd_map.get("file")
         if args[0] not in sub_cmds.keys():
-            print(f"*** '{args[0]}' is not a valid sub-command of 'file'. Use 'help' for options'")
+            self.error(f"'{args[0]}' is not a valid sub-command of 'file'")
             return
         if args[0] == "add":
             sub_cmds.get(args[0])(args[1:])
         else:
             sub_cmds.get(args[0])()
 
+    # TODO
     def do_user(self, arg: str) -> None:
         """
         Allows the user to create and modify users. This method works
@@ -278,8 +298,8 @@ class REPLTest(cmd.Cmd):
         """
         self.ip = ip
         if not self.valid_ip():
-            print(f"*** Invalid IPv4 address: '{ip}'")
-            self.ip = ""
+            self.error(f"Invalid IPv4 address: '{ip}'")
+            self.ip = None
             return
 
     def handle_port(self, port: int) -> None:
@@ -291,8 +311,8 @@ class REPLTest(cmd.Cmd):
         """
         self.port = int(port)
         if not self.valid_port():
-            print(f"*** Invalid port number: '{port}'")
-            self.port = ""
+            self.error(f"Invalid port number: '{port}'")
+            self.port = None
             return
 
     def handle_add(self, files: List) -> None:
@@ -303,13 +323,13 @@ class REPLTest(cmd.Cmd):
             files (List) : file paths to be added to the upload list
         """
         if not files:
-            print(f"*** '{self.lastcmd}' missing required argument: <file_path(s)>")
+            self.error(f"'{self.lastcmd}' missing required argument: <file_path(s)>")
             return
         for file in files:
             path_tuple = self.valid_path(file)
             if not path_tuple[0]:
                 self.files = []
-                print(f"*** {file} is not valid file path. The upload list has not been modified")
+                self.error(f"{file} is not valid file path. The upload list has not been modified")
                 return
             else:
                 self.files.append(path_tuple[1])
@@ -319,7 +339,7 @@ class REPLTest(cmd.Cmd):
         Process the file list command
         """
         if not self.files:
-            print("*** No files have been added for upload")
+            self.error("No files have been added for upload")
             return
         for file in self.files:
             print(file)
@@ -329,28 +349,33 @@ class REPLTest(cmd.Cmd):
         Process the file upload command
         """
         if not self.files:
-            print("*** No files have been added for upload")
+            self.error("No files have been added for upload")
             return
         if not self.ip and not self.port:
-            print("*** Invalid network parameters")
+            self.error("Invalid network parameters")
             return
         client = LobbitClient(self.ip, self.port, self.files)
         client.lobbit_connect()
         client.lobbit_send()
 
-    def handle_create(self) -> None:
+    # TODO
+
+    @staticmethod
+    def handle_create() -> None:
         """
         Process the user create command
         """
         print("Handling user create")
 
-    def handle_update(self) -> None:
+    @staticmethod
+    def handle_update() -> None:
         """
         Process the user update command
         """
         print("Handling user update")
 
-    def handle_delete(self) -> None:
+    @staticmethod
+    def handle_delete() -> None:
         """
         Process the user delete command
         """
@@ -359,7 +384,7 @@ class REPLTest(cmd.Cmd):
 
 if __name__ == '__main__':
     try:
-        repl = REPLTest()
+        repl = LobbitREPL()
         repl.cmdloop()
     except KeyboardInterrupt:
         print("\nBye!")
