@@ -35,6 +35,7 @@ class LobbitREPL(cmd.Cmd):
             "file": {
                 "add": self.handle_add,
                 "list": self.handle_list,
+                "remove": self.handle_remove,
                 "upload": self.handle_upload
             },
             "user": {
@@ -182,7 +183,7 @@ class LobbitREPL(cmd.Cmd):
         if args[0] not in sub_cmds.keys():
             self.error(f"'{args[0]}' is not a valid sub-command of 'file'")
             return
-        if args[0] == "add":
+        if args[0] == "add" or args[0] == "remove":
             sub_cmds.get(args[0])(args[1:])
         else:
             sub_cmds.get(args[0])()
@@ -222,20 +223,22 @@ class LobbitREPL(cmd.Cmd):
               "  user - perform an action on a user object\n"
               "  net  - display the current remote network parameters\n"
               "\nSet commands:\n"
-              "  ip   - set the IPv4 address of the remote server (REQUIRED)\n"
-              "  port - set the port of the remote server (REQUIRED)\n"
+              "  ip [IP_ADDRESS]    - set the IPv4 address of the remote server (REQUIRED)\n"
+              "  port [PORT_NUMBER] - set the port of the remote server (REQUIRED)\n"
               "\nFile commands:\n"
-              "  add    - add a file to the list of files to be uploaded\n"
-              "  list   - list the files you have added for upload\n"
-              "  upload - upload the files you have added\n"
+              "  add [FILE_PATHS] - add a file to the list of files to be uploaded\n"
+              "  list             - list the files you have added for upload\n"
+              "  remove [INDEXES] - remove a file from the upload list\n"
+              "  upload           - upload the files you have added\n"
               "\nUser commands:\n"
-              "  create - create a new user\n"
-              "  update - update a password for an existing user\n"
-              "  delete - delete an existing user\n"
+              "  create <username> <password> - create a new user\n"
+              "  update <username> <password> - update a password for an existing user\n"
+              "  delete <username>            - delete an existing user\n"
               "\nExamples:\n"
-              "  Set IPv4 address       : set ip 100.200.0.1\n"
-              "  Add 2 files for upload : file add /path/to/file1 /another/path/to/file2\n"
-              "  Change user password   : user update <username> <password>\n")
+              "  Set IPv4 address                       : set ip 100.200.0.1\n"
+              "  Add 2 files for upload                 : file add /path/to/file1 /another/path/to/file2\n"
+              "  Remove added files at indexes 1 and 3  : file remove 1 3\n"
+              "  Change user password                   : user update <username> <password>\n")
 
     # --- VALIDATION METHODS ---
 
@@ -341,8 +344,25 @@ class LobbitREPL(cmd.Cmd):
         if not self.files:
             self.error("No files have been added for upload")
             return
-        for file in self.files:
-            print(file)
+        for index, file in enumerate(self.files):
+            print(f"[{index}] {file}")
+
+    def handle_remove(self, indices: List) -> None:
+        """
+        Process the file remove command
+
+        Args:
+             indices (List) : indexes of the element to remove
+        """
+        indices = sorted(indices, reverse=True)
+        for index in indices:
+            try:
+                if int(index) < len(self.files):
+                    self.files.pop(int(index))
+            except IndexError:
+                self.error(f"Chosen index '{index}' is out of bounds")
+            except ValueError:
+                self.error("Index must be of type 'int'")
 
     def handle_upload(self) -> None:
         """

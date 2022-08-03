@@ -1,8 +1,8 @@
 import os
 import socket
 import sys
-import time
 
+from lobbit.buffer import Buffer
 from typing import Dict, List
 
 
@@ -27,7 +27,6 @@ class LobbitClient:
         self.files = files
         self.sock = None
         self.buffer_size = 4096
-        self.delimiter = "<DELIMITER>"
 
     def lobbit_connect(self) -> None:
         """
@@ -50,25 +49,12 @@ class LobbitClient:
         Sends the file supplied by the user to the remote
         location using the socket instance
         """
+        buffer = Buffer(self.sock)
         for file in self.files:
-            file_info = f"{file}{self.delimiter}{self.get_file_sizes()[file]}".encode()
-            self.sock.send(file_info)
-            time.sleep(1)
-            with open(file, "rb") as data:
-                while True:
-                    bytes_read = data.read(self.buffer_size)
-                    if not bytes_read:
-                        break
-                    self.sock.sendall(bytes_read)
-        self.sock.close()
-
-    def get_file_sizes(self) -> Dict:
-        """
-        Gets the file size for each file in the list <self.files>
-        and returns a dictionary of each file with its size
-        """
-        file_sizes_dict = dict()
-        for file in self.files:
-            file_sizes_dict[file] = os.path.getsize(file)
-        return file_sizes_dict
-
+            print(f"[+] Sending '{file}'...")
+            buffer.put_utf8(file)
+            file_size = os.path.getsize(file)
+            buffer.put_utf8(str(file_size))
+            with open(file, 'rb') as f:
+                buffer.put_bytes(f.read())
+            print("[+] File sent\n")

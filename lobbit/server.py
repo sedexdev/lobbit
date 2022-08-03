@@ -5,6 +5,8 @@ import os
 import socket
 import sys
 
+from buffer import Buffer
+
 
 class LobbitServer:
     """
@@ -34,7 +36,7 @@ class LobbitServer:
         that port
         """
         self.sock.bind((self.ip, self.port))
-        self.sock.listen(5)
+        self.sock.listen(10)
         print(f"\n[+] Server listening on {self.ip}:{self.port}...")
 
     def lobbit_accept(self) -> None:
@@ -48,24 +50,33 @@ class LobbitServer:
         """
         Receives the files that were sent from the server
         """
-        if isinstance(self.client_sock, socket.socket):
-            received = self.client_sock.recv(self.buffer_size).decode()
-            file_name, file_size = received.split(self.delimiter)
-            file_name = os.path.basename(file_name)
-            file_size = int(file_size)
-            with open(file_name, "wb") as data:
-                print(f"[+] Writing {int(file_size)} bytes of data to '{os.getcwd()}/{file_name}'...")
-                while True:
-                    bytes_read = self.client_sock.recv(self.buffer_size)
-                    if not bytes_read:
-                        break
-                    data.write(bytes_read)
-                print(f"[+] '{file_name}' written successfully\n")
-            self.client_sock.close()
-            self.sock.close()
-        else:
-            print("\n[-] Socket not configured to accept connections, exiting")
-            sys.exit(2)
+        while True:
+            if isinstance(self.client_sock, socket.socket):
+                buffer = Buffer(self.client_sock)
+                file_name = buffer.get_utf8()
+                if not file_name:
+                    break
+                print(f"File name: {file_name}")
+                file_size = int(buffer.get_utf8())
+                print(f"File size: {file_size}")
+                with open(file_name, 'wb') as f:
+                    remaining = file_size
+                    while remaining:
+                        chunk_size = 4096 if remaining >= 4096 else remaining
+                        chunk = buffer.get_bytes(chunk_size)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        remaining -= len(chunk)
+                    if remaining:
+                        print(f"File incomplete, missing {remaining} bytes")
+                    else:
+                        print(f"File '{file_name}' received successfully")
+                print("Closing connection")
+                self.client_sock.close()
+            else:
+                print("\n[-] Socket not configured to accept connections, exiting")
+                sys.exit(2)
 
 
 def main() -> None:

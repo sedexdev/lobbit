@@ -27,8 +27,7 @@ class TestLobbitREPL(unittest.TestCase):
         Tests that the correct attributes are assigned when
         a new instance of LobbitREPL is created
         """
-        self.assertEqual(self.repl.prompt, "\033[91m" + "lobbit> " + "\033[39m")
-        self.cmd_map = {
+        cmd_map = {
             "set": {
                 "ip": self.repl.handle_ip,
                 "port": self.repl.handle_port
@@ -36,6 +35,7 @@ class TestLobbitREPL(unittest.TestCase):
             "file": {
                 "add": self.repl.handle_add,
                 "list": self.repl.handle_list,
+                "remove": self.repl.handle_remove,
                 "upload": self.repl.handle_upload
             },
             "user": {
@@ -44,10 +44,38 @@ class TestLobbitREPL(unittest.TestCase):
                 "delete": self.repl.handle_delete
             }
         }
+        self.assertEqual(self.repl.cmd_map, cmd_map)
         self.assertEqual(self.repl.client, None)
         self.assertEqual(self.repl.ip, None)
         self.assertEqual(self.repl.port, None)
         self.assertEqual(self.repl.files, [])
+
+    def test_completedefault_returns_correct_matches(self) -> None:
+        """
+        Tests that the overridden completedefault method from Cmd
+        returns lists of matches for sub-commands that do not have
+        an associated <complete_*()> method
+        """
+        self.assertEqual(["ip"], self.repl.completedefault("ip", "set", 0, len("set")-1))
+        self.assertEqual(["add"], self.repl.completedefault("add", "file", 0, len("set")-1))
+        self.assertEqual(["create"], self.repl.completedefault("create", "user", 0, len("set")-1))
+
+    def test_split_args_prints_error_message(self) -> None:
+        """
+        Tests that an error message is printed to stdout when the
+        user enters a base command with no arguments
+        """
+        with patch("sys.stdout", new=StringIO()) as stdout:
+            self.repl.split_args("")
+            self.assertIn("Incomplete command", stdout.getvalue())
+
+    def test_split_args_returns_list_of_arguments(self) -> None:
+        """
+        Tests that a list of arguments is returned from the
+        <split_args> method
+        """
+        args = "ip 127.0.0.1"
+        self.assertEqual(["ip", "127.0.0.1"], self.repl.split_args(args))
 
     def test_quit_command_exits_repl(self) -> None:
         """
@@ -57,6 +85,22 @@ class TestLobbitREPL(unittest.TestCase):
         with self.assertRaises(SystemExit) as se:
             self.repl.do_quit(None)
             self.assertEqual(se.exception.code, 0)
+
+    def test_do_set_method_returns_when_no_args(self) -> None:
+        """
+        Tests that the do_set method returns when no arguments
+        are provided
+        """
+        self.assertEqual(None, self.repl.do_set(""))
+
+    def test_do_set_method_prints_error_with_invalid_args(self) -> None:
+        """
+        Tests that the do_set method returns with an error message
+        when invalid arguments are provided
+        """
+        with patch("sys.stdout", new=StringIO()) as stdout:
+            self.repl.do_set("test")
+            self.assertIn("not a valid sub-command", stdout.getvalue())
 
     def test_valid_ip_returns_ip(self) -> None:
         """
