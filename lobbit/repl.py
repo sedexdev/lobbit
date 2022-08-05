@@ -189,6 +189,7 @@ class LobbitREPL(cmd.Cmd):
             sub_cmds.get(args[0])()
 
     # TODO
+
     def do_user(self, arg: str) -> None:
         """
         Allows the user to create and modify users. This method works

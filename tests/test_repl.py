@@ -102,6 +102,46 @@ class TestLobbitREPL(unittest.TestCase):
             self.repl.do_set("test")
             self.assertIn("not a valid sub-command", stdout.getvalue())
 
+    def test_do_set_command_prints_missing_required_arguments_message(self) -> None:
+        """
+        Tests that the do_set command prints error message when required
+        arguments ore missing
+        """
+        with patch("sys.stdout", new=StringIO()) as stdout:
+            self.repl.do_set("ip")
+            self.assertIn("missing required argument", stdout.getvalue())
+
+    def test_do_file_method_returns_when_no_args(self) -> None:
+        """
+        Tests that the do_file method returns when no arguments
+        are provided
+        """
+        self.assertEqual(None, self.repl.do_file(""))
+
+    def test_do_file_method_prints_error_with_invalid_args(self) -> None:
+        """
+        Tests that the do_file method returns with an error message
+        when invalid arguments are provided
+        """
+        with patch("sys.stdout", new=StringIO()) as stdout:
+            self.repl.do_file("test")
+            self.assertIn("not a valid sub-command", stdout.getvalue())
+
+    def test_do_file_command_prints_missing_required_arguments_message(self) -> None:
+        """
+        Tests that the do_file command prints error message when required
+        arguments ore missing (applies to 'add' and 'remove')
+        """
+        with patch("sys.stdout", new=StringIO()) as stdout:
+            self.repl.do_file("add")
+            self.assertIn("missing required argument", stdout.getvalue())
+
+    def test_do_user(self) -> None:
+        """
+        TO DO
+        """
+        pass
+
     def test_valid_ip_returns_ip(self) -> None:
         """
         Tests that the valid_ip function returns the IP address if a valid IP
@@ -219,3 +259,52 @@ class TestLobbitREPL(unittest.TestCase):
         with patch("sys.stdout", new=StringIO()) as stdout:
             self.repl.handle_list()
             self.assertIn("Error", stdout.getvalue())
+
+    def test_handle_remove_removes_list_items(self) -> None:
+        """
+        Tests that the handle_remove method correctly removes added
+        files
+        """
+        self.repl.files = [self.good_path, self.good_path_2]
+        self.repl.handle_remove([0])
+        self.assertEqual(self.repl.files, [self.good_path_2])
+
+    # TODO
+    #   - following 2 tests failing
+
+    def test_handle_remove_raises_IndexError(self) -> None:
+        """
+        Tests that an IndexError is raised when an out-of-bounds
+        index is passed in
+        """
+        self.repl.files = [self.good_path, self.good_path_2]
+        with self.assertRaises(IndexError):
+            self.repl.handle_remove([5])
+
+    def test_handle_remove_raises_ValueError(self) -> None:
+        """
+        Tests that a ValueError is raised when a non-integer value
+        is passed in
+        """
+        self.repl.files = [self.good_path, self.good_path_2]
+        with self.assertRaises(ValueError):
+            self.repl.handle_remove(["test"])
+
+    def test_handle_upload_returns_if_no_files_are_added(self) -> None:
+        """
+        Tests that handle_upload returns when user tries to upload empty
+        file list
+        """
+        self.assertEqual(None, self.repl.handle_upload())
+
+    def test_handle_upload_returns_if_no_network_settings_are_present(self) -> None:
+        """
+        Tests that handle_upload returns when user tries to upload without
+        setting network parameters
+        """
+        self.repl.files = [self.good_path, self.good_path_2]
+        self.assertEqual(None, self.repl.handle_upload())
+
+
+
+
