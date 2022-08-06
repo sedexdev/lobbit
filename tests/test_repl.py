@@ -93,6 +93,15 @@ class TestLobbitREPL(unittest.TestCase):
         """
         self.assertEqual(None, self.repl.do_set(""))
 
+    def test_do_set_method_prints_error_with_too_many_args(self) -> None:
+        """
+        Tests to ensure an error message is printed if the user
+        passes in too many arguments
+        """
+        with patch("sys.stdout", new=StringIO()) as stdout:
+            self.repl.do_set("ip 127.0.0.1 test")
+            self.assertIn("set ip expects 1 argument", stdout.getvalue())
+
     def test_do_set_method_prints_error_with_invalid_args(self) -> None:
         """
         Tests that the do_set method returns with an error message
