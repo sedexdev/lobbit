@@ -161,6 +161,9 @@ class LobbitREPL(cmd.Cmd):
         if args[0] not in sub_cmds.keys():
             self.error(f"'{args[0]}' is not a valid sub-command of 'set'")
             return
+        if len(args) > 2:
+            self.error(f"set {args[0]} expects 1 argument")
+            return
         try:
             sub_cmds.get(args[0])(args[1])
         except IndexError:
