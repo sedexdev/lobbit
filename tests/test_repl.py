@@ -1,9 +1,15 @@
 import os
+import sys
 import unittest
 
 from io import StringIO
 from unittest.mock import patch
-from lobbit.repl import LobbitREPL
+
+lobbit_app = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../")
+sys.path.append(lobbit_app)
+
+if lobbit_app in sys.path:
+    from app.lobbit_client.repl import LobbitREPL
 
 
 class TestLobbitREPL(unittest.TestCase):
@@ -310,7 +316,3 @@ class TestLobbitREPL(unittest.TestCase):
         """
         self.repl.files = [self.good_path, self.good_path_2]
         self.assertEqual(None, self.repl.handle_upload())
-
-
-
-

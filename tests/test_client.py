@@ -1,8 +1,12 @@
 import os
-import socket
+import sys
 import unittest
 
-from lobbit.client import LobbitClient
+lobbit_app = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../")
+sys.path.append(lobbit_app)
+
+if lobbit_app in sys.path:
+    from app.lobbit_client.client import LobbitClient
 
 
 class TestClient(unittest.TestCase):
