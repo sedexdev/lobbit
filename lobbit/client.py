@@ -2,7 +2,7 @@ import os
 import socket
 import sys
 
-from lobbit.buffer import Buffer
+from buffer import Buffer
 from typing import List
 
 

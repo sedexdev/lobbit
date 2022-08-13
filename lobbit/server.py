@@ -4,7 +4,7 @@ import json
 import os
 import socket
 
-from lobbit.buffer import Buffer
+from buffer import Buffer
 
 
 class LobbitServer:
