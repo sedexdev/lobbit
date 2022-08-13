@@ -146,6 +146,11 @@ class LobbitREPL(cmd.Cmd):
         print("Bye!")
         sys.exit(0)
 
+    # TODO
+    #   - check bug with command history
+    #   - when history gets a command with a '.', the
+    #     start of the command is left after the prompt
+
     def do_set(self, arg: str) -> None:
         """
         Sets a network parameter used to create a connection

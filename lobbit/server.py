@@ -3,9 +3,8 @@
 import json
 import os
 import socket
-import sys
 
-from buffer import Buffer
+from lobbit.buffer import Buffer
 
 
 class LobbitServer:
@@ -14,20 +13,20 @@ class LobbitServer:
     connections from the client application
     """
 
-    def __init__(self, ip: str, port: int) -> None:
+    def __init__(self, ip: str, port: int, upload_path: str) -> None:
         """
         Constructor for the LobbitServer class
 
         Args:
-            ip (str)   : local IPv4 address
-            port (int) : local port for clients to connect to
+            ip (str)          : local IPv4 address
+            port (int)        : local port for clients to connect to
+            upload_path (str) : upload destination
         """
         self.ip = ip
         self.port = port
+        self.upload_path = upload_path
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_sock = None
-        self.buffer_size = 4096
-        self.delimiter = "<DELIMITER>"
 
     def lobbit_listen(self) -> None:
         """
@@ -44,39 +43,35 @@ class LobbitServer:
         Accepts incoming connections from the client
         """
         self.client_sock, address = self.sock.accept()
-        print(f"[+] Client {address} accepted\n")
+        print(f"[+] Client {address} accepted")
 
     def lobbit_receive(self) -> None:
         """
         Receives the files that were sent from the server
         """
+        buffer = Buffer(self.client_sock)
         while True:
-            if isinstance(self.client_sock, socket.socket):
-                buffer = Buffer(self.client_sock)
-                file_name = buffer.get_utf8()
-                if not file_name:
-                    break
-                print(f"File name: {file_name}")
-                file_size = int(buffer.get_utf8())
-                print(f"File size: {file_size}")
-                with open(file_name, 'wb') as f:
-                    remaining = file_size
-                    while remaining:
-                        chunk_size = 4096 if remaining >= 4096 else remaining
-                        chunk = buffer.get_bytes(chunk_size)
-                        if not chunk:
-                            break
-                        f.write(chunk)
-                        remaining -= len(chunk)
-                    if remaining:
-                        print(f"File incomplete, missing {remaining} bytes")
-                    else:
-                        print(f"File '{file_name}' received successfully")
-                print("Closing connection")
-                self.client_sock.close()
-            else:
-                print("\n[-] Socket not configured to accept connections, exiting")
-                sys.exit(2)
+            file_name = buffer.get_utf8().split('/')[-1]
+            if not file_name:
+                break
+            print(f"\n[+] File name: {file_name}")
+            file_size = int(buffer.get_utf8())
+            print(f"[+] File size: {file_size}MB")
+            with open(f"{self.upload_path}{file_name}", 'wb') as f:
+                remaining = file_size
+                while remaining:
+                    chunk_size = 4096 if remaining >= 4096 else remaining
+                    chunk = buffer.get_bytes(chunk_size)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    remaining -= len(chunk)
+                if remaining:
+                    print(f"[-] File incomplete, missing {remaining} bytes")
+                else:
+                    print(f"[+] File '{file_name}' received successfully")
+        print("\n[+] Closing connection...\n")
+        self.client_sock.close()
 
 
 def main() -> None:
@@ -85,7 +80,7 @@ def main() -> None:
     """
     with open(f"{os.path.abspath(os.path.dirname(__file__))}/../config.json") as file:
         config = json.load(file)
-    server = LobbitServer(config["SERVER_HOST"], config["SERVER_PORT"])
+    server = LobbitServer(config["SERVER_HOST"], config["SERVER_PORT"], config["UPLOAD_PATH"])
     server.lobbit_listen()
     server.lobbit_accept()
     server.lobbit_receive()

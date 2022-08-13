@@ -3,7 +3,7 @@ import socket
 import sys
 
 from lobbit.buffer import Buffer
-from typing import Dict, List
+from typing import List
 
 
 class LobbitClient:
@@ -26,7 +26,6 @@ class LobbitClient:
         self.port = port
         self.files = files
         self.sock = None
-        self.buffer_size = 4096
 
     def lobbit_connect(self) -> None:
         """

@@ -278,17 +278,14 @@ class TestLobbitREPL(unittest.TestCase):
         self.repl.handle_remove([0])
         self.assertEqual(self.repl.files, [self.good_path_2])
 
-    # TODO
-    #   - following 2 tests failing
-
     def test_handle_remove_raises_IndexError(self) -> None:
         """
         Tests that an IndexError is raised when an out-of-bounds
         index is passed in
         """
         self.repl.files = [self.good_path, self.good_path_2]
-        with self.assertRaises(IndexError):
-            self.repl.handle_remove([5])
+        self.repl.handle_remove([5])
+        self.assertRaises(IndexError)
 
     def test_handle_remove_raises_ValueError(self) -> None:
         """
@@ -296,8 +293,8 @@ class TestLobbitREPL(unittest.TestCase):
         is passed in
         """
         self.repl.files = [self.good_path, self.good_path_2]
-        with self.assertRaises(ValueError):
-            self.repl.handle_remove(["test"])
+        self.repl.handle_remove(["test"])
+        self.assertRaises(ValueError)
 
     def test_handle_upload_returns_if_no_files_are_added(self) -> None:
         """

@@ -35,15 +35,3 @@ class TestClient(unittest.TestCase):
         self.assertEqual(self.lc.port, 1234)
         self.assertEqual(self.lc.files, [self.path])
         self.assertEqual(self.lc.sock, None)
-        self.assertEqual(self.lc.delimiter, "<DELIMITER>")
-        self.assertEqual(self.lc.buffer_size, 4096)
-
-    def test_get_file_sizes_returns_dictionary_with_correct_sizes(self) -> None:
-        """
-        Tests that filenames and sizes are sent back in the correct format
-        """
-        file_sizes = self.lc.get_file_sizes()
-        expected = {
-            f"{os.path.abspath(os.path.dirname(__file__))}/test_data/blank": 0
-        }
-        self.assertEqual(file_sizes, expected)

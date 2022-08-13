@@ -1,9 +1,7 @@
 import socket
 import unittest
 
-from lobbit.server import (
-    LobbitServer
-)
+from lobbit.server import LobbitServer
 
 
 class TestServer(unittest.TestCase):
@@ -15,7 +13,7 @@ class TestServer(unittest.TestCase):
         """
         Initialises test case variables
         """
-        self.ls = LobbitServer("127.0.0.1", 1234)
+        self.ls = LobbitServer("127.0.0.1", 1234, "/test/path")
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def tearDown(self) -> None:
@@ -32,10 +30,9 @@ class TestServer(unittest.TestCase):
         """
         self.assertEqual(self.ls.ip, "127.0.0.1")
         self.assertEqual(self.ls.port, 1234)
+        self.assertEqual(self.ls.upload_path, "/test/path")
         self.assertEqual(type(self.ls.sock), type(self.sock))
         self.assertEqual(self.ls.client_sock, None)
-        self.assertEqual(self.ls.buffer_size, 4096)
-        self.assertEqual(self.ls.delimiter, "<DELIMITER>")
 
     def test_lobbit_receive_exits_when_client_sock_is_not_initialised(self) -> None:
         """
