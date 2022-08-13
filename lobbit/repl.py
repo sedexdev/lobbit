@@ -236,7 +236,7 @@ class LobbitREPL(cmd.Cmd):
               "  ip [IP_ADDRESS]    - set the IPv4 address of the remote server (REQUIRED)\n"
               "  port [PORT_NUMBER] - set the port of the remote server (REQUIRED)\n"
               "\nFile commands:\n"
-              "  add [FILE_PATHS] - add a file to the list of files to be uploaded\n"
+              "  add [FILE_PATHS] - add one or more file paths to the list of files to be uploaded\n"
               "  list             - list the files you have added for upload\n"
               "  remove [INDEXES] - remove a file from the upload list\n"
               "  upload           - upload the files you have added\n"
