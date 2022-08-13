@@ -16,7 +16,6 @@ class TestClient(unittest.TestCase):
         """
         self.path = f"{os.path.abspath(os.path.dirname(__file__))}/test_data/blank"
         self.lc = LobbitClient("172.16.0.10", 1234, [self.path])
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def tearDown(self) -> None:
         """
@@ -24,7 +23,6 @@ class TestClient(unittest.TestCase):
         """
         if self.lc.sock:
             self.lc.sock.close()
-        self.sock.close()
 
     def test_LobbitSocket_initialises_correctly(self) -> None:
         """

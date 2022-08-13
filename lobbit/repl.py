@@ -197,6 +197,7 @@ class LobbitREPL(cmd.Cmd):
             sub_cmds.get(args[0])()
 
     # TODO
+    #   - do_user
 
     def do_user(self, arg: str) -> None:
         """
@@ -388,6 +389,9 @@ class LobbitREPL(cmd.Cmd):
         client.lobbit_send()
 
     # TODO
+    #  - handle_create
+    #  - handle_update
+    #  - handle_delete
 
     @staticmethod
     def handle_create() -> None:

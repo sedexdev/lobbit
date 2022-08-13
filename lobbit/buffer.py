@@ -4,7 +4,7 @@ from typing import Union
 
 class Buffer:
     """
-    Defines a data buffer that can be used to receive
+    Defines a test_data buffer that can be used to receive
     information over an instance of <socket.socket>
     """
 
@@ -25,7 +25,7 @@ class Buffer:
         Args:
             len_bytes (int) : exact number of bytes to buffer
         Returns:
-            bytes : byte data sent over the socket
+            bytes : byte test_data sent over the socket
         """
         while len(self.buffer) < len_bytes:
             data = self.sock.recv(1024)
@@ -40,10 +40,10 @@ class Buffer:
 
     def put_bytes(self, data: bytes) -> None:
         """
-        Send buffered data over the socket
+        Send buffered test_data over the socket
 
         Args:
-            data (bytes) : data being sent over the socket
+            data (bytes) : test_data being sent over the socket
         """
         self.sock.sendall(data)
 
@@ -65,10 +65,10 @@ class Buffer:
 
     def put_utf8(self, data: str) -> None:
         """
-        Send buffered UTF-8 data over the socket
+        Send buffered UTF-8 test_data over the socket
 
         Args:
-            data (str) : data being sent over the socket
+            data (str) : test_data being sent over the socket
         """
         if '\x00' in data:
             raise ValueError("string contains delimiter 'null'")

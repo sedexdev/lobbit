@@ -11,7 +11,7 @@ class LobbitHash:
         """
         Takes in a byte string and generates a 256bit hash digest
         using the SHA-256 hash function. The salt is pulled from
-        the database and used to compare the data in <value> to
+        the database and used to compare the test_data in <value> to
         the value stored in the database
 
         Args:
@@ -43,14 +43,14 @@ class LobbitEncrypt:
         Constructor for the LobbitEncrypt class
 
         Args:
-            data : the data to be encrypted
+            data : the test_data to be encrypted
             key  : the symmetric encryption key
         """
         pass
 
     def encrypt(self) -> bytes:
         """
-        Encrypts the data supplied by the user
+        Encrypts the test_data supplied by the user
 
         Returns:
             bytes : an encrypted byte string of ciphertext
