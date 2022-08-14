@@ -364,6 +364,9 @@ class LobbitREPL(cmd.Cmd):
         Args:
              indices (List) : indexes of the element to remove
         """
+        if not len(self.files):
+            self.error("The upload list is currently empty...")
+            return
         indices = sorted(indices, reverse=True)
         for index in indices:
             try:
@@ -385,8 +388,9 @@ class LobbitREPL(cmd.Cmd):
             self.error("Invalid network parameters")
             return
         client = LobbitClient(self.ip, self.port, self.files)
-        client.lobbit_connect()
-        client.lobbit_send()
+        connection = client.lobbit_connect()
+        if connection:
+            client.lobbit_send()
 
     # TODO
     #  - handle_create

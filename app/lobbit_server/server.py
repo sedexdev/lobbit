@@ -5,6 +5,10 @@ import os
 import socket
 import sys
 
+from _thread import start_new_thread
+from threading import Lock
+from typing import Tuple
+
 lobbit_app = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../../")
 sys.path.append(lobbit_app)
 
@@ -32,6 +36,7 @@ class LobbitServer:
         self.upload_path = upload_path
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_sock = None
+        self.thread_lock = Lock()
 
     def lobbit_listen(self) -> None:
         """
@@ -47,17 +52,28 @@ class LobbitServer:
         """
         Accepts incoming connections from the client
         """
-        self.client_sock, address = self.sock.accept()
-        print(f"[+] Client {address} accepted")
+        try:
+            while True:
+                self.client_sock, address = self.sock.accept()
+                self.thread_lock.acquire()
+                print(f"[+] Client '{address[0]}:{address[1]}' accepted")
+                start_new_thread(self.lobbit_receive, (address,))
+        except KeyboardInterrupt:
+            print("\r[+] Shutting down server... bye!\n")
+            sys.exit(0)
 
-    def lobbit_receive(self) -> None:
+    def lobbit_receive(self, connection: Tuple) -> None:
         """
         Receives the files that were sent from the server
+
+        Args:
+            connection (Tuple) : contains the IP and port of the client
         """
         buffer = Buffer(self.client_sock)
         while True:
             file_name = buffer.get_utf8().split('/')[-1]
             if not file_name:
+                self.thread_lock.release()
                 break
             print(f"\n[+] File name: {file_name}")
             file_size = int(buffer.get_utf8())
@@ -75,7 +91,7 @@ class LobbitServer:
                     print(f"[-] File incomplete, missing {remaining} bytes")
                 else:
                     print(f"[+] File '{file_name}' received successfully")
-        print("\n[+] Closing connection...\n")
+        print(f"\n[+] Closing connection '{connection[0]}:{connection[1]}'...\n")
         self.client_sock.close()
 
 
@@ -83,12 +99,17 @@ def main() -> None:
     """
     Main function of the Lobbit server application
     """
-    with open(f"{os.path.abspath(os.path.dirname(__file__))}/../../config.json") as file:
-        config = json.load(file)
-    server = LobbitServer(config["SERVER_HOST"], config["SERVER_PORT"], config["UPLOAD_PATH"])
-    server.lobbit_listen()
-    server.lobbit_accept()
-    server.lobbit_receive()
+    try:
+        current_dir = os.path.abspath(os.path.dirname(__file__))
+        with open(f"{current_dir}/../../config.json") as file:
+            config = json.load(file)
+        server = LobbitServer(config["SERVER_HOST"], config["SERVER_PORT"], config["UPLOAD_PATH"])
+        server.lobbit_listen()
+        server.lobbit_accept()
+        # server.lobbit_receive()
+    except KeyboardInterrupt:
+        print("\r[+] Shutting down server... bye!\n")
+        sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,5 @@
 import os
 import socket
-import sys
 
 from app.lobbit_util.buffer import Buffer
 from typing import List
@@ -27,21 +26,25 @@ class LobbitClient:
         self.files = files
         self.sock = None
 
-    def lobbit_connect(self) -> None:
+    def lobbit_connect(self) -> bool:
         """
         Create the connection to the remote location
+
+        Returns:
+            bool : True if connection was successful, False if not
         """
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            print(f"\n[+] Connecting to {self.ip}:{self.port}...")
+            print(f"[+] Connecting to {self.ip}:{self.port}...")
             self.sock.connect((self.ip, self.port))
             print("[+] Connected successfully\n")
+            return True
         except ConnectionRefusedError:
-            print(f"\n[-] Failed to connect to {self.ip}:{self.port}. Check that the server application is running\n")
-            sys.exit(2)
+            print(f"[-] Connection '{self.ip}:{self.port}' failed. Check IP/port and that server app is running...")
+            return False
         except TimeoutError:
-            print(f"\n[-] Failed to connect to {self.ip}:{self.port}. Check IP values and network settings\n")
-            sys.exit(2)
+            print(f"[-] Connection '{self.ip}:{self.port}' failed. Check IP/port and that server app is running...")
+            return False
 
     def lobbit_send(self) -> None:
         """
