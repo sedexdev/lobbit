@@ -1,6 +1,7 @@
 import os
 import socket
 import sys
+import threading
 import unittest
 
 lobbit_app = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../")
@@ -39,3 +40,4 @@ class TestServer(unittest.TestCase):
         self.assertEqual(self.ls.upload_path, "/test/path")
         self.assertEqual(type(self.ls.sock), type(self.sock))
         self.assertEqual(self.ls.client_sock, None)
+        self.assertEqual(type(self.ls.thread_lock), type(threading.Lock()))
