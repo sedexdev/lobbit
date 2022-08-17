@@ -106,7 +106,6 @@ def main() -> None:
         server = LobbitServer(config["SERVER_HOST"], config["SERVER_PORT"], config["UPLOAD_PATH"])
         server.lobbit_listen()
         server.lobbit_accept()
-        # server.lobbit_receive()
     except KeyboardInterrupt:
         print("\r[+] Shutting down server... bye!\n")
         sys.exit(0)
