@@ -1,5 +1,6 @@
 #!/usr/bin/bash python3
 
+import string
 import cmd
 import ipaddress
 import os
@@ -248,7 +249,14 @@ class LobbitREPL(cmd.Cmd):
               "  Set IPv4 address                       : set ip 100.200.0.1\n"
               "  Add 2 files for upload                 : file add /path/to/file1 /another/path/to/file2\n"
               "  Remove added files at indexes 1 and 3  : file remove 1 3\n"
-              "  Change user password                   : user update <username> <password>\n")
+              "  Change user password                   : user update <username> <password>\n"
+              "\n==== CREATING PASSWORDS ====\n"
+              "\nPasswords must meet the following complexity requirements:\n"
+              "\n\t- Contain at least 12 characters\n"
+              "\t- Contain a least one lower case letter\n"
+              "\t- Contain a least one lower case letter\n"
+              "\t- Contain a least one number\n"
+              f"\t- Contain a least 3 ASCII literate symbols - {string.punctuation}\n")
 
     # --- VALIDATION METHODS ---
 
