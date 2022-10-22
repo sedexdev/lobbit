@@ -43,11 +43,6 @@ class TestLobbitREPL(unittest.TestCase):
                 "list": self.repl.handle_list,
                 "remove": self.repl.handle_remove,
                 "upload": self.repl.handle_upload
-            },
-            "user": {
-                "create": self.repl.handle_create,
-                "update": self.repl.handle_update,
-                "delete": self.repl.handle_delete
             }
         }
         self.assertEqual(self.repl.cmd_map, cmd_map)
@@ -64,7 +59,6 @@ class TestLobbitREPL(unittest.TestCase):
         """
         self.assertEqual(["ip"], self.repl.completedefault("ip", "set", 0, len("set")-1))
         self.assertEqual(["add"], self.repl.completedefault("add", "file", 0, len("set")-1))
-        self.assertEqual(["create"], self.repl.completedefault("create", "user", 0, len("set")-1))
 
     def test_split_args_prints_error_message(self) -> None:
         """

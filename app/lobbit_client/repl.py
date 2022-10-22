@@ -38,11 +38,6 @@ class LobbitREPL(cmd.Cmd):
                 "list": self.handle_list,
                 "remove": self.handle_remove,
                 "upload": self.handle_upload
-            },
-            "user": {
-                "create": self.handle_create,
-                "update": self.handle_update,
-                "delete": self.handle_delete
             }
         }
         self.client = None
@@ -70,8 +65,6 @@ class LobbitREPL(cmd.Cmd):
             return self.sub_cmd_matches("set", text)
         if tokens[0].strip() == "file":
             return self.sub_cmd_matches("file", text)
-        if tokens[0].strip() == "user":
-            return self.sub_cmd_matches("user", text)
         return []
 
     def emptyline(self) -> None:
@@ -197,22 +190,6 @@ class LobbitREPL(cmd.Cmd):
         else:
             sub_cmds.get(args[0])()
 
-    # TODO
-    #   - do_user
-
-    def do_user(self, arg: str) -> None:
-        """
-        Allows the user to create and modify users. This method works
-        in conjunction with the <LobbitAPI> class that should be
-        running on the server instance to create, update, and delete
-        users from the backend database. Security is handled using the
-        classes in crypto.py
-
-        Args:
-            arg (str) : the base command arguments passed in by the user
-        """
-        self.split_args(arg)
-
     def do_net(self, _) -> None:
         """
         Shows the current network socket configuration
@@ -231,7 +208,6 @@ class LobbitREPL(cmd.Cmd):
               "\nBase commands:\n"
               "  set  - Set the value of a required network parameter\n"
               "  file - perform an action on a file or list of files\n"
-              "  user - perform an action on a user object\n"
               "  net  - display the current remote network parameters\n"
               "\nSet commands:\n"
               "  ip [IP_ADDRESS]    - set the IPv4 address of the remote server (REQUIRED)\n"
@@ -241,22 +217,10 @@ class LobbitREPL(cmd.Cmd):
               "  list             - list the files you have added for upload\n"
               "  remove [INDEXES] - remove a file from the upload list\n"
               "  upload           - upload the files you have added\n"
-              "\nUser commands:\n"
-              "  create <username> <password> - create a new user\n"
-              "  update <username> <password> - update a password for an existing user\n"
-              "  delete <username>            - delete an existing user\n"
               "\nExamples:\n"
               "  Set IPv4 address                       : set ip 100.200.0.1\n"
               "  Add 2 files for upload                 : file add /path/to/file1 /another/path/to/file2\n"
-              "  Remove added files at indexes 1 and 3  : file remove 1 3\n"
-              "  Change user password                   : user update <username> <password>\n"
-              "\n==== CREATING PASSWORDS ====\n"
-              "\nPasswords must meet the following complexity requirements:\n"
-              "\n\t- Contain at least 12 characters\n"
-              "\t- Contain a least one lower case letter\n"
-              "\t- Contain a least one lower case letter\n"
-              "\t- Contain a least one number\n"
-              f"\t- Contain a least 3 ASCII literate symbols - {string.punctuation}\n")
+              "  Remove added files at indexes 1 and 3  : file remove 1 3\n")
 
     # --- VALIDATION METHODS ---
 
@@ -399,32 +363,6 @@ class LobbitREPL(cmd.Cmd):
         connection = client.lobbit_connect()
         if connection:
             client.lobbit_send()
-
-    # TODO
-    #  - handle_create
-    #  - handle_update
-    #  - handle_delete
-
-    @staticmethod
-    def handle_create() -> None:
-        """
-        Process the user create command
-        """
-        print("Handling user create")
-
-    @staticmethod
-    def handle_update() -> None:
-        """
-        Process the user update command
-        """
-        print("Handling user update")
-
-    @staticmethod
-    def handle_delete() -> None:
-        """
-        Process the user delete command
-        """
-        print("Handling user delete")
 
 
 if __name__ == '__main__':

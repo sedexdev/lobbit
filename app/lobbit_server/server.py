@@ -46,7 +46,7 @@ class LobbitServer:
         """
         self.sock.bind((self.ip, self.port))
         self.sock.listen(10)
-        print(f"\n[+] Server listening on {self.ip}:{self.port}...")
+        print(f"[+] Server listening on {self.ip}:{self.port}...")
 
     def lobbit_accept(self) -> None:
         """
@@ -75,7 +75,7 @@ class LobbitServer:
             if not file_name:
                 self.thread_lock.release()
                 break
-            print(f"\n[+] File name: {file_name}")
+            print(f"[+] File name: {file_name}")
             file_size = int(buffer.get_utf8())
             print(f"[+] File size: {file_size}MB")
             with open(f"{self.upload_path}{file_name}", 'wb') as f:
@@ -91,7 +91,8 @@ class LobbitServer:
                     print(f"[-] File incomplete, missing {remaining} bytes")
                 else:
                     print(f"[+] File '{file_name}' received successfully")
-        print(f"\n[+] Closing connection '{connection[0]}:{connection[1]}'...\n")
+        print(f"[+] Closing connection '{connection[0]}:{connection[1]}'...")
+        print(f"[+] Server listening on {self.ip}:{self.port}...")
         self.client_sock.close()
 
 
@@ -107,7 +108,7 @@ def main() -> None:
         server.lobbit_listen()
         server.lobbit_accept()
     except KeyboardInterrupt:
-        print("\r[+] Shutting down server... bye!\n")
+        print("\r[+] Shutting down server... bye!")
         sys.exit(0)
 
 
