@@ -65,10 +65,10 @@ class Buffer:
 
     def put_utf8(self, data: str) -> None:
         """
-        Send buffered UTF-8 test_data over the socket
+        Send buffered UTF-8 data over the socket
 
         Args:
-            data (str) : test_data being sent over the socket
+            data (str) : data being sent over the socket
         """
         if '\x00' in data:
             raise ValueError("string contains delimiter 'null'")
