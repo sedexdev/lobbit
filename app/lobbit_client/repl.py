@@ -24,7 +24,7 @@ class LobbitREPL(cmd.Cmd):
 
     def __init__(self) -> None:
         """
-        Constructor for the REPLTest class
+        Constructor for the LobbitREPL class
         """
         super().__init__()
         self.cmd_map = {

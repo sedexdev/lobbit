@@ -104,7 +104,7 @@ def main() -> None:
         current_dir = os.path.abspath(os.path.dirname(__file__))
         with open(f"{current_dir}/../../config.json") as file:
             config = json.load(file)
-        server = LobbitServer(config["SERVER_HOST"], config["SERVER_PORT"], config["UPLOAD_PATH"])
+        server = LobbitServer(config["SERVER_IP"], config["SERVER_PORT"], config["UPLOAD_PATH"])
         server.lobbit_listen()
         server.lobbit_accept()
     except KeyboardInterrupt:

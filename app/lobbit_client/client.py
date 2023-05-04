@@ -40,10 +40,13 @@ class LobbitClient:
             print("[+] Connected successfully\n")
             return True
         except ConnectionRefusedError:
-            print(f"[-] Connection '{self.ip}:{self.port}' failed. Check IP/port and that server app is running...")
+            print(f"[-] Connection '{self.ip}:{self.port}' failed. Connection refused...")
             return False
         except TimeoutError:
-            print(f"[-] Connection '{self.ip}:{self.port}' failed. Check IP/port and that server app is running...")
+            print(f"[-] Connection '{self.ip}:{self.port}' failed. Connection timeout...")
+            return False
+        except Exception as e:
+            print(f"[-] Exception caught: {e}")
             return False
 
     def lobbit_send(self) -> None:
