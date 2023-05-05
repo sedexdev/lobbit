@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 # Misc files
+certs/
 config.json
 tests/test_data
 

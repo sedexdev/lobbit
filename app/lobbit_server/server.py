@@ -3,6 +3,7 @@
 import json
 import os
 import socket
+import ssl
 import sys
 
 from _thread import start_new_thread
@@ -37,6 +38,20 @@ class LobbitServer:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_sock = None
         self.thread_lock = Lock()
+        self.context = self.get_ssl_context()
+
+    @staticmethod
+    def get_ssl_context() -> ssl.SSLContext:
+        # context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        # context.verify_mode = ssl.CERT_REQUIRED
+
+        current_dir = os.path.abspath(os.path.dirname(__file__))
+        with open(f"{current_dir}/../../config.json") as file:
+            config = json.load(file)
+
+        context.load_cert_chain(config['CERT_PATH'], config['KEY_PATH'])
+        return context
 
     def lobbit_listen(self) -> None:
         """
@@ -54,6 +69,7 @@ class LobbitServer:
         """
         try:
             while True:
+                self.sock = self.context.wrap_socket(self.sock, server_side=True)
                 self.client_sock, address = self.sock.accept()
                 self.thread_lock.acquire()
                 print(f"[+] Client '{address[0]}:{address[1]}' accepted")

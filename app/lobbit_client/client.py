@@ -1,5 +1,7 @@
+import json
 import os
 import socket
+import ssl
 
 from app.lobbit_util.buffer import Buffer
 from typing import List
@@ -25,6 +27,7 @@ class LobbitClient:
         self.port = port
         self.files = files
         self.sock = None
+        self.context = ssl.create_default_context()
 
     def lobbit_connect(self) -> bool:
         """
@@ -36,6 +39,13 @@ class LobbitClient:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             print(f"[+] Connecting to {self.ip}:{self.port}...")
+            self.sock = self.context.wrap_socket(self.sock, server_hostname=self.ip)
+
+            current_dir = os.path.abspath(os.path.dirname(__file__))
+            with open(f"{current_dir}/../../config.json") as file:
+                config = json.load(file)
+
+            self.context.load_verify_locations(config['CLIENT_CERT_PATH'])
             self.sock.connect((self.ip, self.port))
             print("[+] Connected successfully\n")
             return True
