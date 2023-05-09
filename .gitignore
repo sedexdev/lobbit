@@ -5,6 +5,7 @@ __pycache__/
 
 # Misc files
 config.json
+certs/
 tests/test_data
 
 # Pycharm
