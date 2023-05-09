@@ -23,7 +23,7 @@ class LobbitClient:
             port (int)   : remote port to connect to
             files (List) : list of files to upload to the server
         """
-        self.ip = ip
+        self.host = ip
         self.port = port
         self.files = files
         self.sock = None
@@ -38,22 +38,22 @@ class LobbitClient:
         """
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            print(f"[+] Connecting to {self.ip}:{self.port}...")
-            self.sock = self.context.wrap_socket(self.sock, server_hostname=self.ip)
+            print(f"[+] Connecting to {self.host}:{self.port}...")
+            self.sock = self.context.wrap_socket(self.sock, server_hostname=self.host)
 
             current_dir = os.path.abspath(os.path.dirname(__file__))
             with open(f"{current_dir}/../../config.json") as file:
                 config = json.load(file)
 
             self.context.load_verify_locations(config['CLIENT_CERT_PATH'])
-            self.sock.connect((self.ip, self.port))
+            self.sock.connect((self.host, self.port))
             print("[+] Connected successfully\n")
             return True
         except ConnectionRefusedError:
-            print(f"[-] Connection '{self.ip}:{self.port}' failed. Connection refused...")
+            print(f"[-] Connection '{self.host}:{self.port}' failed. Connection refused...")
             return False
         except TimeoutError:
-            print(f"[-] Connection '{self.ip}:{self.port}' failed. Connection timeout...")
+            print(f"[-] Connection '{self.host}:{self.port}' failed. Connection timeout...")
             return False
         except Exception as e:
             print(f"[-] Exception caught: {e}")
