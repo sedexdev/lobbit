@@ -30,6 +30,7 @@ class LobbitREPL(cmd.Cmd):
         self.cmd_map = {
             "set": {
                 "ip": self.handle_ip,
+                "hostname": self.handle_hostname,
                 "port": self.handle_port
             },
             "file": {
@@ -37,12 +38,17 @@ class LobbitREPL(cmd.Cmd):
                 "list": self.handle_list,
                 "remove": self.handle_remove,
                 "upload": self.handle_upload
+            },
+            "use": {
+                "hostname": self.set_hostname,
+                "ip": self.set_ip
             }
         }
         self.client = None
-        self.ip = None
+        self.host = None
         self.port = None
         self.files = []
+        self.hostname = False
 
     # --- OVERLOADED CMD METHODS ---
 
@@ -64,6 +70,8 @@ class LobbitREPL(cmd.Cmd):
             return self.sub_cmd_matches("set", text)
         if tokens[0].strip() == "file":
             return self.sub_cmd_matches("file", text)
+        if tokens[0].strip() == "use":
+            return self.sub_cmd_matches("use", text)
         return []
 
     def emptyline(self) -> None:
@@ -165,8 +173,10 @@ class LobbitREPL(cmd.Cmd):
         try:
             sub_cmds.get(args[0])(args[1])
         except IndexError:
-            arg_name = "<ipv4_address>" if args[0] == "ip" else "<port_number>"
-            self.error(f"'{self.lastcmd}' missing required argument: {arg_name}")
+            for arg in sub_cmds.keys():
+                if args[0] == arg:
+                    self.error(f"'{self.lastcmd}' missing required argument: {arg}")
+                    return
 
     def do_file(self, arg: str) -> None:
         """
@@ -189,12 +199,36 @@ class LobbitREPL(cmd.Cmd):
         else:
             sub_cmds.get(args[0])()
 
+    def do_use(self, arg: str) -> None:
+        """
+        Allows the user to use either the remote machine's hostname or IP
+        address to create the connection. Use the boolean value of <self.hostname>
+        to toggle between options
+
+        Args:
+            arg (str) : the base command arguments passed in by the user
+        """
+        args = self.split_args(arg)
+        if not args:
+            return
+        sub_cmds = self.cmd_map.get("use")
+        if args[0] not in sub_cmds.keys():
+            self.error(f"'{args[0]}' is not a valid sub-command of 'use'")
+            return
+        if len(args) > 1:
+            self.error(f"Unexpected arguments '{args[1:]}' after {args[0]}")
+            return
+        sub_cmds.get(args[0])()
+
     def do_net(self, _) -> None:
         """
         Shows the current network socket configuration
         """
-        print(f"IPv4 Address: {self.ip}")
-        print(f"Port number : {self.port}")
+        if self.hostname:
+            print(f"Hostname: {self.host}")
+        else:
+            print(f"IPv4 Address: {self.host}")
+        print(f"Port number: {self.port}")
 
     def do_help(self, arg: str) -> None:
         """
@@ -207,6 +241,7 @@ class LobbitREPL(cmd.Cmd):
               "\nBase commands:\n"
               "  set  - Set the value of a required network parameter\n"
               "  file - perform an action on a file or list of files\n"
+              "  use  - use either 'hostname' or 'ip' for the remote connection\n"
               "  net  - display the current remote network parameters\n"
               "\nSet commands:\n"
               "  ip [IP_ADDRESS]    - set the IPv4 address of the remote server (REQUIRED)\n"
@@ -216,22 +251,26 @@ class LobbitREPL(cmd.Cmd):
               "  list             - list the files you have added for upload\n"
               "  remove [INDEXES] - remove a file from the upload list\n"
               "  upload           - upload the files you have added\n"
+              "\nUse commands:\n"
+              "  hostname - use a hostname for the remote connection\n"
+              "  ip       - use an IP address for the remote connection\n"
               "\nExamples:\n"
               "  Set IPv4 address                       : set ip 100.200.0.1\n"
               "  Add 2 files for upload                 : file add /path/to/file1 /another/path/to/file2\n"
-              "  Remove added files at indexes 1 and 3  : file remove 1 3\n")
+              "  Remove added files at indexes 1 and 3  : file remove 1 3\n"
+              "  Use hostname instead of IP to connect  : use hostname\n")
 
     # --- VALIDATION METHODS ---
 
     def valid_ip(self) -> Union[str, bool]:
         """
-        Checks that the value of <self.ip> is a valid IPv4 address
+        Checks that the value of <self.host> is a valid IPv4 address
 
         Returns:
             str : the value of <ip> if a ValueError is not raised
         """
         try:
-            return str(ipaddress.ip_address(self.ip))
+            return str(ipaddress.ip_address(self.host))
         except ValueError:
             return False
 
@@ -280,11 +319,26 @@ class LobbitREPL(cmd.Cmd):
         Args:
             ip (str) : ip address passed into 'set ip'
         """
-        self.ip = ip
+        if self.hostname:
+            self.error("Current settings require a hostname")
+            return
+        self.host = ip
         if not self.valid_ip():
             self.error(f"Invalid IPv4 address: '{ip}'")
-            self.ip = None
+            self.host = None
             return
+
+    def handle_hostname(self, hostname: str) -> None:
+        """
+        Processes the set hostname command
+
+        Args:
+            hostname (str): hostname passed into 'set hostname'
+        """
+        if not self.hostname:
+            self.error("Current settings require an IP address")
+            return
+        self.host = hostname
 
     def handle_port(self, port: int) -> None:
         """
@@ -355,13 +409,27 @@ class LobbitREPL(cmd.Cmd):
         if not self.files:
             self.error("No files have been added for upload")
             return
-        if not self.ip and not self.port:
+        if not self.host and not self.port:
             self.error("Invalid network parameters")
             return
-        client = LobbitClient(self.ip, self.port, self.files)
+        client = LobbitClient(self.host, self.port, self.files)
         connection = client.lobbit_connect()
         if connection:
             client.lobbit_send()
+
+    def set_hostname(self) -> None:
+        """
+        Sets the socket connection host to a hostname
+        """
+        self.host = None
+        self.hostname = True
+
+    def set_ip(self) -> None:
+        """
+        Sets the socket connection host to an IP address
+        """
+        self.host = None
+        self.hostname = False
 
 
 if __name__ == '__main__':
