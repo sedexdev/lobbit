@@ -50,7 +50,7 @@ class LobbitServer:
         with open(f"{current_dir}/../../config.json") as file:
             config = json.load(file)
 
-        context.load_cert_chain(config['CERT_PATH'], config['KEY_PATH'])
+        context.load_cert_chain(config['SERVER_CERT_PATH'], config['SERVER_KEY_PATH'])
         return context
 
     def lobbit_listen(self) -> None:
