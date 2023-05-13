@@ -225,10 +225,11 @@ class LobbitREPL(cmd.Cmd):
         Shows the current network socket configuration
         """
         if self.hostname:
-            print(f"Hostname: {self.host}")
+            print(f"Hostname   : {self.host}")
+            print(f"Port number: {self.port}")
         else:
             print(f"IPv4 Address: {self.host}")
-        print(f"Port number: {self.port}")
+            print(f"Port number : {self.port}")
 
     def do_help(self, arg: str) -> None:
         """

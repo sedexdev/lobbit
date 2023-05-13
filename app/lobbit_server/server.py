@@ -42,15 +42,13 @@ class LobbitServer:
 
     @staticmethod
     def get_ssl_context() -> ssl.SSLContext:
-        # context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-        # context.verify_mode = ssl.CERT_REQUIRED
+        context = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS)
 
         current_dir = os.path.abspath(os.path.dirname(__file__))
         with open(f"{current_dir}/../../config.json") as file:
             config = json.load(file)
 
-        context.load_cert_chain(config['SERVER_CERT_PATH'], config['SERVER_KEY_PATH'])
+        context.load_cert_chain(certfile=config['SERVER_CERT_PATH'], keyfile=config['SERVER_CERT_PATH'])
         return context
 
     def lobbit_listen(self) -> None:

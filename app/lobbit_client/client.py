@@ -49,7 +49,8 @@ class LobbitClient:
             self.sock.connect((self.host, self.port))
             print("[+] Connected successfully\n")
             return True
-        except ConnectionRefusedError:
+        except ConnectionRefusedError as e:
+            print(e)
             print(f"[-] Connection '{self.host}:{self.port}' failed. Connection refused...")
             return False
         except TimeoutError:
