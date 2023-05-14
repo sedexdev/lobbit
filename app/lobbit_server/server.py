@@ -42,14 +42,44 @@ class LobbitServer:
 
     @staticmethod
     def get_ssl_context() -> ssl.SSLContext:
+        """
+        Creates a default SSLContext object for socket encryption/decryption
+        and loads the SSL certificate used for client authentication to the
+        server
+
+        Returns:
+            SSLContext: the default context to wrap the socket
+        """
         context = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS)
 
         current_dir = os.path.abspath(os.path.dirname(__file__))
         with open(f"{current_dir}/../../config.json") as file:
             config = json.load(file)
 
-        context.load_cert_chain(certfile=config['SERVER_CERT_PATH'], keyfile=config['SERVER_CERT_PATH'])
-        return context
+        path = config['SERVER_CERT_PATH']
+        exists, msg = LobbitServer.cert_exists(path)
+        if exists:
+            context.load_cert_chain(certfile=path, keyfile=path)
+            return context
+        else:
+            print(msg)
+            sys.exit(1)
+
+    @staticmethod
+    def cert_exists(path: str) -> Tuple[bool, str]:
+        """
+        Checks for the existence of a .pem certificate file at the location
+        defined in config.json as SERVER_CERT_PATH
+
+        Returns:
+            bool: True if <cert_name>.pem exists, False is not
+        """
+        if not os.path.isfile(path):
+            return False, "[-] File not found, check value of SERVER_CERT_PATH"
+        suffix = path.split(".")[-1].lower()
+        if suffix != "pem":
+            return False, f"[-] Expected .pem certificate file, found .{suffix}"
+        return True, ""
 
     def lobbit_listen(self) -> None:
         """
@@ -118,7 +148,7 @@ def main() -> None:
         current_dir = os.path.abspath(os.path.dirname(__file__))
         with open(f"{current_dir}/../../config.json") as file:
             config = json.load(file)
-        server = LobbitServer(config["SERVER_IP"], config["SERVER_PORT"], config["UPLOAD_PATH"])
+        server = LobbitServer(config["HOST"], config["PORT"], config["UPLOAD_PATH"])
         server.lobbit_listen()
         server.lobbit_accept()
     except KeyboardInterrupt:

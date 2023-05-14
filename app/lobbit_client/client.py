@@ -4,7 +4,7 @@ import socket
 import ssl
 
 from app.lobbit_util.buffer import Buffer
-from typing import List
+from typing import List, Tuple
 
 
 class LobbitClient:
@@ -29,6 +29,22 @@ class LobbitClient:
         self.sock = None
         self.context = ssl.create_default_context()
 
+    @staticmethod
+    def cert_exists(path: str) -> Tuple[bool, str]:
+        """
+        Checks for the existence of a .pem certificate file at the location
+        defined in config.json as SERVER_CERT_PATH
+
+        Returns:
+            bool: True if <cert_name>.pem exists, False is not
+        """
+        if not os.path.isfile(path):
+            return False, "[-] File not found, check value of CLIENT_CERT_PATH"
+        suffix = path.split(".")[-1].lower()
+        if suffix != "pem":
+            return False, f"[-] Expected .pem certificate file, found .{suffix}"
+        return True, ""
+
     def lobbit_connect(self) -> bool:
         """
         Create the connection to the remote location
@@ -44,11 +60,16 @@ class LobbitClient:
             current_dir = os.path.abspath(os.path.dirname(__file__))
             with open(f"{current_dir}/../../config.json") as file:
                 config = json.load(file)
-
-            self.context.load_verify_locations(config['CLIENT_CERT_PATH'])
-            self.sock.connect((self.host, self.port))
-            print("[+] Connected successfully\n")
-            return True
+                
+            path = config['CLIENT_CERT_PATH']
+            exists, msg = LobbitClient.cert_exists(path)
+            if exists:
+                self.context.load_verify_locations(config['CLIENT_CERT_PATH'])
+                self.sock.connect((self.host, self.port))
+                print("[+] Connected successfully\n")
+                return True
+            else:
+                print(msg)
         except ConnectionRefusedError as e:
             print(e)
             print(f"[-] Connection '{self.host}:{self.port}' failed. Connection refused...")
