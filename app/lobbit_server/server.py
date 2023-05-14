@@ -78,7 +78,7 @@ class LobbitServer:
             return False, "[-] File not found, check value of SERVER_CERT_PATH"
         suffix = path.split(".")[-1].lower()
         if suffix != "pem":
-            return False, f"[-] Expected .pem certificate file, found .{suffix}"
+            return False, f"[-] Expected .pem certificate file type, found .{suffix} file"
         return True, ""
 
     def lobbit_listen(self) -> None:

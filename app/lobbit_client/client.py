@@ -60,7 +60,7 @@ class LobbitClient:
             current_dir = os.path.abspath(os.path.dirname(__file__))
             with open(f"{current_dir}/../../config.json") as file:
                 config = json.load(file)
-                
+
             path = config['CLIENT_CERT_PATH']
             exists, msg = LobbitClient.cert_exists(path)
             if exists:
