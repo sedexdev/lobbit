@@ -43,11 +43,15 @@ class TestLobbitREPL(unittest.TestCase):
                 "list": self.repl.handle_list,
                 "remove": self.repl.handle_remove,
                 "upload": self.repl.handle_upload
+            },
+            "use": {
+                "hostname": self.repl.set_hostname,
+                "ip": self.repl.set_ip
             }
         }
         self.assertEqual(self.repl.cmd_map, cmd_map)
         self.assertEqual(self.repl.client, None)
-        self.assertEqual(self.repl.ip, None)
+        self.assertEqual(self.repl.host, None)
         self.assertEqual(self.repl.port, None)
         self.assertEqual(self.repl.files, [])
 
@@ -145,11 +149,12 @@ class TestLobbitREPL(unittest.TestCase):
             self.repl.do_file("add")
             self.assertIn("missing required argument", stdout.getvalue())
 
-    def test_do_user(self) -> None:
+    # TODO
+    def test_do_use(self):
         """
-        TO DO
+        TODO
+        :return:
         """
-        pass
 
     def test_valid_ip_returns_ip(self) -> None:
         """
