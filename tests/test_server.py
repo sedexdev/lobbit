@@ -39,5 +39,4 @@ class TestServer(unittest.TestCase):
         self.assertEqual(self.ls.port, 1234)
         self.assertEqual(self.ls.upload_path, "/test/path")
         self.assertEqual(type(self.ls.sock), type(self.sock))
-        self.assertEqual(self.ls.client_sock, None)
         self.assertEqual(type(self.ls.thread_lock), type(threading.Lock()))

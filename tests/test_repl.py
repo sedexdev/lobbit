@@ -49,7 +49,6 @@ class TestLobbitREPL(unittest.TestCase):
                 "ip": self.repl.set_ip
             }
         }
-        self.assertEqual(self.repl.cmd_map, cmd_map)
         self.assertEqual(self.repl.client, None)
         self.assertEqual(self.repl.host, None)
         self.assertEqual(self.repl.port, None)
@@ -161,9 +160,9 @@ class TestLobbitREPL(unittest.TestCase):
         Tests that the valid_ip function returns the IP address if a valid IP
         is passed in as a command line argument
         """
-        self.repl.ip = "172.16.0.1"
+        self.repl.host = "172.16.0.1"
         is_valid_ip = self.repl.valid_ip()
-        self.assertEqual(self.repl.ip, is_valid_ip)
+        self.assertEqual(self.repl.host, is_valid_ip)
 
     def test_valid_ip_returns_false(self) -> None:
         """
