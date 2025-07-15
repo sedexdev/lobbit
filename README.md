@@ -1,4 +1,4 @@
-# Lobbit: A tool for transferring files
+# Lobbit: A file transfere tool
 
 [![Test](https://github.com/sedexdev/lobbit/actions/workflows/test.yml/badge.svg)](https://github.com/sedexdev/lobbit/actions/workflows/test.yml)
 
