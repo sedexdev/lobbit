@@ -50,6 +50,8 @@ vim config.json
 
 # 🛠️ Usage
 
+## Running Lobbit
+
 - Running the client REPL CLI and the server
 
 ```bash
@@ -63,6 +65,8 @@ python3 repl.py
 cd lobbit/app/lobbit_server
 python3 server.py
 ```
+
+## Lobbit Commands
 
 - Within the REPL the following commands are available:
 
