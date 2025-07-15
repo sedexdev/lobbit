@@ -7,7 +7,7 @@ __pycache__/
 certs/
 config.json
 certs/
-tests/test_data
+tests/test_data/
 
 # Pycharm
 .idea/

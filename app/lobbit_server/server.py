@@ -32,11 +32,10 @@ class LobbitServer:
             port (int)        : local port for clients to connect to
             upload_path (str) : upload destination
         """
-        self.ip = ip
+        self.host = ip
         self.port = port
         self.upload_path = upload_path
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_sock = None
         self.thread_lock = Lock()
         self.context = self.get_ssl_context()
 
@@ -50,16 +49,17 @@ class LobbitServer:
         Returns:
             SSLContext: the default context to wrap the socket
         """
-        context = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS)
+        context = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_SERVER)
 
         current_dir = os.path.abspath(os.path.dirname(__file__))
         with open(f"{current_dir}/../../config.json") as file:
             config = json.load(file)
 
-        path = config['SERVER_CERT_PATH']
-        exists, msg = LobbitServer.cert_exists(path)
+        public_path = config['PUBLIC_CERT_PATH']
+        private_path = config['PRIVATE_CERT_PATH']
+        exists, msg = LobbitServer.cert_exists(public_path)
         if exists:
-            context.load_cert_chain(certfile=path, keyfile=path)
+            context.load_cert_chain(certfile=public_path, keyfile=private_path)
             return context
         else:
             print(msg)
@@ -69,13 +69,13 @@ class LobbitServer:
     def cert_exists(path: str) -> Tuple[bool, str]:
         """
         Checks for the existence of a .pem certificate file at the location
-        defined in config.json as SERVER_CERT_PATH
+        defined in config.json as PUBLIC_CERT_PATH
 
         Returns:
             bool: True if <cert_name>.pem exists, False is not
         """
         if not os.path.isfile(path):
-            return False, "[-] File not found, check value of SERVER_CERT_PATH"
+            return False, "[-] File not found, check value of PUBLIC_CERT_PATH"
         suffix = path.split(".")[-1].lower()
         if suffix != "pem":
             return False, f"[-] Expected .pem certificate file type, found .{suffix} file"
@@ -87,33 +87,34 @@ class LobbitServer:
         held in <self.sock> then starts listening on
         that port
         """
-        self.sock.bind((self.ip, self.port))
+        self.sock.bind((self.host, self.port))
         self.sock.listen(10)
-        print(f"[+] Server listening on {self.ip}:{self.port}...")
+        print(f"[+] Server listening on {self.host}:{self.port}...")
 
     def lobbit_accept(self) -> None:
         """
         Accepts incoming connections from the client
         """
+        self.sock = self.context.wrap_socket(self.sock, server_side=True)
         try:
             while True:
-                self.sock = self.context.wrap_socket(self.sock, server_side=True)
-                self.client_sock, address = self.sock.accept()
+                client_sock, address = self.sock.accept()
                 self.thread_lock.acquire()
                 print(f"[+] Client '{address[0]}:{address[1]}' accepted")
-                start_new_thread(self.lobbit_receive, (address,))
+                start_new_thread(self.lobbit_receive, (client_sock, address,))
         except KeyboardInterrupt:
             print("\r[+] Shutting down server... bye!\n")
             sys.exit(0)
 
-    def lobbit_receive(self, connection: Tuple) -> None:
+    def lobbit_receive(self, client_sock: socket.socket, connection: Tuple) -> None:
         """
         Receives the files that were sent from the server
 
         Args:
+            client_sock (socket.socket): client socket object
             connection (Tuple) : contains the IP and port of the client
         """
-        buffer = Buffer(self.client_sock)
+        buffer = Buffer(client_sock)
         while True:
             file_name = buffer.get_utf8().split('/')[-1]
             if not file_name:
@@ -136,8 +137,8 @@ class LobbitServer:
                 else:
                     print(f"[+] File '{file_name}' received successfully")
         print(f"[+] Closing connection '{connection[0]}:{connection[1]}'...")
-        print(f"[+] Server listening on {self.ip}:{self.port}...")
-        self.client_sock.close()
+        print(f"[+] Server listening on {self.host}:{self.port}...")
+        client_sock.close()
 
 
 def main() -> None:

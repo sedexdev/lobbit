@@ -35,7 +35,7 @@ class TestServer(unittest.TestCase):
         Tests that the LobbitServer class has the correct attributes
         after initialisation
         """
-        self.assertEqual(self.ls.ip, "127.0.0.1")
+        self.assertEqual(self.ls.host, "127.0.0.1")
         self.assertEqual(self.ls.port, 1234)
         self.assertEqual(self.ls.upload_path, "/test/path")
         self.assertEqual(type(self.ls.sock), type(self.sock))

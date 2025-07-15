@@ -1,6 +1,8 @@
 # lobbit: a tool for transferring files to a remote location
 
-The lobbit tool is used for the secure transfer of files in a single direction; from client to 
+SSL self-signed cert: openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365 -nodes
+
+The lobbit tool is used for the secure transfer of files in a single direction; from client to
 server. The tool requires that the server application is running on the remote device to allow incoming
 connections. Security is provided through authentication using a self-signed SSL certificate.
 
@@ -28,10 +30,11 @@ Use</br>
 <code>ip</code> - use an IP address for the remote connection</br>
 
 <b>Examples</b></br>
-  Set IPv4 address                       : <code>set ip 10.0.0.1</code></br>
-  Add 2 files for upload                 : <code>file add /path/to/file1 /another/path/to/file2</code></br>
-  Remove added files at indexes 1 and 3  : <code>file remove 1 3</code></br>
-  Use hostname instead of IP to connect  : <code>use hostname</code></br>
+Set IPv4 address : <code>set ip 10.0.0.1</code></br>
+Add 2 files for upload : <code>file add /path/to/file1 /another/path/to/file2</code></br>
+Remove added files at indexes 1 and 3 : <code>file remove 1 3</code></br>
+Use hostname instead of IP to connect : <code>use hostname</code></br>
+Set hostname : <code>set hostname {hostname}</code></br>
 
 # License
 

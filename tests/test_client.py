@@ -33,7 +33,7 @@ class TestClient(unittest.TestCase):
         Tests that a newly created instance of LobbitSocket has the correct
         attributes
         """
-        self.assertEqual(self.lc.ip, "172.16.0.10")
+        self.assertEqual(self.lc.host, "172.16.0.10")
         self.assertEqual(self.lc.port, 1234)
         self.assertEqual(self.lc.files, [self.path])
         self.assertEqual(self.lc.sock, None)

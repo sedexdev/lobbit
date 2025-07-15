@@ -14,16 +14,16 @@ class LobbitClient:
     and uploading files
     """
 
-    def __init__(self, ip: str, port: int, files: List) -> None:
+    def __init__(self, host: str, port: int, files: List) -> None:
         """
         Constructor for the LobbitClient class
 
         Args:
-            ip (str)     : remote IPv4 address
+            host (str)   : remote IPv4 address
             port (int)   : remote port to connect to
             files (List) : list of files to upload to the server
         """
-        self.host = ip
+        self.host = host
         self.port = port
         self.files = files
         self.sock = None
@@ -33,13 +33,13 @@ class LobbitClient:
     def cert_exists(path: str) -> Tuple[bool, str]:
         """
         Checks for the existence of a .pem certificate file at the location
-        defined in config.json as SERVER_CERT_PATH
+        defined in config.json as PUBLIC_CERT_PATH
 
         Returns:
             bool: True if <cert_name>.pem exists, False is not
         """
         if not os.path.isfile(path):
-            return False, "[-] File not found, check value of CLIENT_CERT_PATH"
+            return False, "[-] File not found, check value of PUBLIC_CERT_PATH"
         suffix = path.split(".")[-1].lower()
         if suffix != "pem":
             return False, f"[-] Expected .pem certificate file, found .{suffix}"
@@ -52,30 +52,34 @@ class LobbitClient:
         Returns:
             bool : True if connection was successful, False if not
         """
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            print(f"[+] Connecting to {self.host}:{self.port}...")
-            self.sock = self.context.wrap_socket(self.sock, server_hostname=self.host)
-
             current_dir = os.path.abspath(os.path.dirname(__file__))
             with open(f"{current_dir}/../../config.json") as file:
                 config = json.load(file)
 
-            path = config['CLIENT_CERT_PATH']
+            path = config['PUBLIC_CERT_PATH']
             exists, msg = LobbitClient.cert_exists(path)
-            if exists:
-                self.context.load_verify_locations(config['CLIENT_CERT_PATH'])
-                self.sock.connect((self.host, self.port))
-                print("[+] Connected successfully\n")
-                return True
-            else:
+            if not exists:
                 print(msg)
+                return False
+
+            self.context.load_verify_locations(cafile=path)
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock = self.context.wrap_socket(self.sock, server_hostname=self.host)
+
+            print(f"[+] Connecting to {self.host}:{self.port}...")
+            self.sock.connect((self.host, self.port))
+            print("[+] Connected successfully\n")
+            return True
         except ConnectionRefusedError as e:
             print(e)
             print(f"[-] Connection '{self.host}:{self.port}' failed. Connection refused...")
             return False
         except TimeoutError:
             print(f"[-] Connection '{self.host}:{self.port}' failed. Connection timeout...")
+            return False
+        except ssl.SSLCertVerificationError as e:
+            print(f"[-] SSL Certificate verification failed: {e}")
             return False
         except Exception as e:
             print(f"[-] Exception caught: {e}")
