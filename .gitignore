@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Misc files
+# Local config files
 certs/
 config.json
 
