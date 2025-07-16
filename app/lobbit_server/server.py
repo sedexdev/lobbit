@@ -52,7 +52,7 @@ class LobbitServer:
         context = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_SERVER)
 
         current_dir = os.path.abspath(os.path.dirname(__file__))
-        with open(f"{current_dir}/../../config.json") as file:
+        with open(f"{current_dir}/../../config.json", encoding="utf-8") as file:
             config = json.load(file)
 
         public_path = config['PUBLIC_CERT_PATH']
@@ -61,9 +61,8 @@ class LobbitServer:
         if exists:
             context.load_cert_chain(certfile=public_path, keyfile=private_path)
             return context
-        else:
-            print(msg)
-            sys.exit(1)
+        print(msg)
+        sys.exit(1)
 
     @staticmethod
     def cert_exists(path: str) -> Tuple[bool, str]:
@@ -147,9 +146,10 @@ def main() -> None:
     """
     try:
         current_dir = os.path.abspath(os.path.dirname(__file__))
-        with open(f"{current_dir}/../../config.json") as file:
+        with open(f"{current_dir}/../../config.json", encoding="utf-8") as file:
             config = json.load(file)
-        server = LobbitServer(config["HOST"], config["PORT"], config["UPLOAD_PATH"])
+        server = LobbitServer(
+            config["HOST"], config["PORT"], config["UPLOAD_PATH"])
         server.lobbit_listen()
         server.lobbit_accept()
     except KeyboardInterrupt:
