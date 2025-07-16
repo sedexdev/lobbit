@@ -30,7 +30,7 @@ class TestServer(unittest.TestCase):
         self.ls.sock.close()
         self.sock.close()
 
-    @unittest.skipIf(os.getenv("GITHUB_ACTIONS") == "true", "Skipping due to missing SSL cert on runner")
+    @unittest.skipIf(os.getenv("ON_GITHUB_ACTIONS") == "true", "Skipping due to missing SSL cert on runner")
     def test_lobbitServer_initialises_correctly(self) -> None:
         """
         Tests that the LobbitServer class has the correct attributes
